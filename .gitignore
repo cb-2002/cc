@@ -1,0 +1,10 @@
+build/
+_/
+gcc.c-torture/
+*.rdbg
+*.lnk
+build_run.bat
+run.bat
+test_1.bat
+shell.bat
+todo.txt
