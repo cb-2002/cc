@@ -5,7 +5,8 @@ for /f "tokens=1,*" %%a in (..\test.tsv) do (
 	set expected=%%a
 	if not %%a == SKIP (
 		echo %%b
-		cc.exe %%b > tmp.asm || exit /b
+		echo %%b > tmp.c
+		cc.exe tmp.c > tmp.asm || exit /b
 		nasm -f win64 tmp.asm -o tmp.obj || exit /b
 		link /nologo /entry:main /out:tmp.exe tmp.obj || exit /b
 		tmp.exe

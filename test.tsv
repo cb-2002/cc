@@ -1,122 +1,122 @@
-0	"int main(){return 0;}"
-11	"int main(){return 11;}"
-24	"int main(){return 2+22;}"
-10	"int main(){return  3 + 7 ;}"
-2	"int main(){return 5-3;}"
-9	"int main(){return 5+3+1;}"
-9	"int main(){return 5+3-1+2;}"
-5	"int main(){return (5+3)-(1+2);}"
-6	"int main(){return 2*3;}"
-24	"int main(){return 2*3*4;}"
-3	"int main(){return 1+2*3-4;}"
-2	"int main(){return 6/3;}"
-1	"int main(){return 6/5;}"
-3	"int main(){return 4/3*3;}"
-4	"int main(){return 4/(3/3);}"
-6	"int main(){return 32%13;}"
-3	"int main(){return 8-1&3;}"
-3	"int main(){return 7&3;}"
-0	"int main(){return 2*4&5;}"
-0	"int main(){return 7&3^3;}"
-7	"int main(){return 10+2&20|9/3;}"
--5	"int main(){return -5;}"
-1	"int main(){return 6+-5;}"
--4	"int main(){return ~3;}"
-3	"int main(){return !-3+3;}"
-1	"int main(){return !(-3+3);}"
-0	"int main(){return 4<3;}"
-1	"int main(){return 4>3;}"
-0	"int main(){return 3>4;}"
-1	"int main(){return 3<4;}"
-0	"int main(){return 4<4;}"
-12	"int main(){return 3<<2;}"
-7	"int main(){return 15>>1;}"
-1	"int main(){return 2==2;}"
-0	"int main(){return 2!=2;}"
-0	"int main(){return 0&&0;}"
-0	"int main(){return 1&&0;}"
-0	"int main(){return 0&&1;}"
-1	"int main(){return 1&&1;}"
-0	"int main(){return 0||0;}"
-1	"int main(){return 1||0;}"
-1	"int main(){return 0||1;}"
-1	"int main(){return 1||1;}"
-0	"int main(){return 0&&1&&0;}"
-1	"int main(){return 0||1||0;}"
-2	"int main(){return 0?1:2;}"
-1	"int main(){return 1?1:2;}"
-3	"int main(){return 0?1:0?2:3;}"
-2	"int main(){return 0?1:1?2:3;}"
-1	"int main(){return 1?1:0?2:3;}"
-1	"int main(){return 1?1:1?2:3;}"
-7	"int main(){return 1+2,2+3,3+4;}"
-2	"int main(){return 1?1,2:3;}"
-3	"int main(){return 0?1,2:3;}"
-4	"int main(){return 0?1,2:3,4;}"
-4	"int main(){return 1?1,2:3,4;}"
-2	"int main(){int x,y;return x=2,y=3,x;}"
-5	"int main(){int x,y;return x=2,y=3,x+y;}"
-SKIP 5	"int main(){int x,y;return x=4,*(&x-8)=5,y;}"
-5	"int main(){1,2;2,3,4;return 5;}"
-0	"int main(){return 0;}"
-0	"int main(){return 0;1;}"
-3	"int main(){int x=3;return x;}"
-1	"int main(){int x=3;return x?1:2;}"
-2	"int main(){int x=0;return x?1:2;}"
-2	"int main(){if(0==1)1; else 2;}"
-1	"int main(){if(1==1)1; else 2;}"
-3	"int main(){if(0)if(0)return 1;else return 2;else return 3;}"
-3	"int main(){if(0)if(1)return 1;else return 2;else return 3;}"
-2	"int main(){if(1)if(0)return 1;else return 2;else return 3;}"
-1	"int main(){if(1)if(1)return 1;else return 2;else return 3;}"
-3	"int main(){if(0)return 1;else if(0)return 2;else return 3;}"
-2	"int main(){if(0)return 1;else if(1)return 2;else return 3;}"
-1	"int main(){if(1)return 1;else if(0)return 2;else return 3;}"
-1	"int main(){if(1)return 1;else if(1)return 2;else return 3;}"
-45	"int main(){for(int x=0,y=0;x<10;x=x+1)y=y+x;return y;}"
-5040	"int main(){for(int x=1,y=7;y>0;x=x*y,y=y-1);return x;}"
-5040	"int main(){int x=1,y=7;for(;y>0;x=x*y,y=y-1);return x;}"
-5040	"int main(){int x=1,y=7;for(;y>0;x=x*y,y=y-1);return x;}"
-5040	"int main(){int x=1,y=7;for(;;x=x*y,y=y-1)if(y==1)return x;}"
-5040	"int main(){int x=1,y=7;for(;;){if(y==0)return x;x=x*y,y=y-1;}}"
-144	"int main(){int x=0,y=1,z=0;while(z<100)z=x+y,x=y,y=z;return z;}"
-144	"int main(){int x=0,y=1,z=0;while(1)if(z>100)return z;else z=x+y,x=y,y=z;return -1;}"
-144	"int main(){int x=0,y=1,z;do z=x+y,x=y,y=z;while(z<100);return z;}"
-144	"int main(){int x=0,y=1,z;do if(z>100)return z;else z=x+y,x=y,y=z;while(1);return -1;}"
-5	"int main(){for(int x=0;x<10;x=x+1)if(x==5)break;return x;}"
-20	"int main(){int y=0;for(int x=0;x<10;x=x+1)if(x&1)continue;else y=y+x;return y;}"
-5040	"int main(){for(int x=1,y=7;;x=x*y,y=y-1)if(y>0)continue;else return x;return -1;}"
-4	"int main(){int x=2,y=3;if(x!=y)goto L;else goto M;L:return 4;M:return 5;return -1;}"
-5	"int main(){int x=2,y=3;if(x==y)goto L;else goto M;L:return 4;M:return 5;return -1;}"
-2	"int main(){if(0)L:return 2;goto L;return -1;}"
-2	"int main(){if(1)L:return 2;goto L;return -1;}"
-2	"int main(){int x=2;{int x=3;}return x;}"
-3	"int main(){int x=2;{x=3;}return x;}"
-0	"int main(){return 0;}int f(){return 2;}"
-6	"int f(){return 2;}int main(){return 3*f();}"
-16	"int f(){return 2;}int g(){return 3;}int main(){return f()<<g();}"
-17	"int f(){int x=3;return x;}int g(){int x=4;return x;}int main(){int x=5;return f()*g()+x;}"
-0	"int f(int x){return 2;}int main(){return 0;}"
-0	"int f(int x,int y){return 2;}int main(){return 0;}"
-2	"int f(int x,int y){return 2;}int main(){return f(2,3);}"
-6	"int f(int x,int y){return x*y;}int main(){return f(2,3);}"
--5	"int f(int x,int y,int z){return x-y-z;}int main(){return f(2,3,4);}"
-3	"int x;int f(){x=3;return 0;}int main(){f();return x;}"
-3	"int x=3;int main(){return x;}"
-2	"int main(){int x=2;return x++;}"
-3	"int main(){int x=2;return x++,x;}"
-2	"int main(){int x=2;return x--;}"
-1	"int main(){int x=2;return x--,x;}"
-5	"int main(){int x=2;return x+=3,x;}"
-1	"int main(){int x=3;return x&=5,x;}"
-2	"int main(){int x=5;return x%=3,x;}"
-6	"int main(){int x=2;return x*=3,x;}"
-7	"int main(){int x=5;return x|=3,x;}"
-16	"int main(){int x=2;return x<<=3,x;}"
-2	"int main(){int x=16;return x>>=3,x;}"
--1	"int main(){int x=2;return x-=3,x;}"
-6	"int main(){int x=5;return x^=3,x;}"
-3	"int main(){int x=2;return ++x;}"
-1	"int main(){int x=2;return --x;}"
-4	"int main(){int x=2,y=3;return y+++--x;}"
-8	"int main(){int x=2,y=3,z;return z=y+++--x,z+y;}"
+0	int main(){return 0;}
+11	int main(){return 11;}
+24	int main(){return 2+22;}
+10	int main(){return  3 + 7 ;}
+2	int main(){return 5-3;}
+9	int main(){return 5+3+1;}
+9	int main(){return 5+3-1+2;}
+5	int main(){return (5+3)-(1+2);}
+6	int main(){return 2*3;}
+24	int main(){return 2*3*4;}
+3	int main(){return 1+2*3-4;}
+2	int main(){return 6/3;}
+1	int main(){return 6/5;}
+3	int main(){return 4/3*3;}
+4	int main(){return 4/(3/3);}
+6	int main(){return 32%13;}
+3	int main(){return 8-1&3;}
+3	int main(){return 7&3;}
+0	int main(){return 2*4&5;}
+0	int main(){return 7&3^3;}
+7	int main(){return 10+2&20|9/3;}
+-5	int main(){return -5;}
+1	int main(){return 6+-5;}
+-4	int main(){return ~3;}
+3	int main(){return !-3+3;}
+1	int main(){return !(-3+3);}
+0	int main(){return 4<3;}
+1	int main(){return 4>3;}
+0	int main(){return 3>4;}
+1	int main(){return 3<4;}
+0	int main(){return 4<4;}
+12	int main(){return 3<<2;}
+7	int main(){return 15>>1;}
+1	int main(){return 2==2;}
+0	int main(){return 2!=2;}
+0	int main(){return 0&&0;}
+0	int main(){return 1&&0;}
+0	int main(){return 0&&1;}
+1	int main(){return 1&&1;}
+0	int main(){return 0||0;}
+1	int main(){return 1||0;}
+1	int main(){return 0||1;}
+1	int main(){return 1||1;}
+0	int main(){return 0&&1&&0;}
+1	int main(){return 0||1||0;}
+2	int main(){return 0?1:2;}
+1	int main(){return 1?1:2;}
+3	int main(){return 0?1:0?2:3;}
+2	int main(){return 0?1:1?2:3;}
+1	int main(){return 1?1:0?2:3;}
+1	int main(){return 1?1:1?2:3;}
+7	int main(){return 1+2,2+3,3+4;}
+2	int main(){return 1?1,2:3;}
+3	int main(){return 0?1,2:3;}
+4	int main(){return 0?1,2:3,4;}
+4	int main(){return 1?1,2:3,4;}
+2	int main(){int x,y;return x=2,y=3,x;}
+5	int main(){int x,y;return x=2,y=3,x+y;}
+SKIP 5	int main(){int x,y;return x=4,*(&x-8)=5,y;}
+5	int main(){1,2;2,3,4;return 5;}
+0	int main(){return 0;}
+0	int main(){return 0;1;}
+3	int main(){int x=3;return x;}
+1	int main(){int x=3;return x?1:2;}
+2	int main(){int x=0;return x?1:2;}
+2	int main(){if(0==1)1; else 2;}
+1	int main(){if(1==1)1; else 2;}
+3	int main(){if(0)if(0)return 1;else return 2;else return 3;}
+3	int main(){if(0)if(1)return 1;else return 2;else return 3;}
+2	int main(){if(1)if(0)return 1;else return 2;else return 3;}
+1	int main(){if(1)if(1)return 1;else return 2;else return 3;}
+3	int main(){if(0)return 1;else if(0)return 2;else return 3;}
+2	int main(){if(0)return 1;else if(1)return 2;else return 3;}
+1	int main(){if(1)return 1;else if(0)return 2;else return 3;}
+1	int main(){if(1)return 1;else if(1)return 2;else return 3;}
+45	int main(){for(int x=0,y=0;x<10;x=x+1)y=y+x;return y;}
+5040	int main(){for(int x=1,y=7;y>0;x=x*y,y=y-1);return x;}
+5040	int main(){int x=1,y=7;for(;y>0;x=x*y,y=y-1);return x;}
+5040	int main(){int x=1,y=7;for(;y>0;x=x*y,y=y-1);return x;}
+5040	int main(){int x=1,y=7;for(;;x=x*y,y=y-1)if(y==1)return x;}
+5040	int main(){int x=1,y=7;for(;;){if(y==0)return x;x=x*y,y=y-1;}}
+144	int main(){int x=0,y=1,z=0;while(z<100)z=x+y,x=y,y=z;return z;}
+144	int main(){int x=0,y=1,z=0;while(1)if(z>100)return z;else z=x+y,x=y,y=z;return -1;}
+144	int main(){int x=0,y=1,z;do z=x+y,x=y,y=z;while(z<100);return z;}
+144	int main(){int x=0,y=1,z;do if(z>100)return z;else z=x+y,x=y,y=z;while(1);return -1;}
+5	int main(){for(int x=0;x<10;x=x+1)if(x==5)break;return x;}
+20	int main(){int y=0;for(int x=0;x<10;x=x+1)if(x&1)continue;else y=y+x;return y;}
+5040	int main(){for(int x=1,y=7;;x=x*y,y=y-1)if(y>0)continue;else return x;return -1;}
+4	int main(){int x=2,y=3;if(x!=y)goto L;else goto M;L:return 4;M:return 5;return -1;}
+5	int main(){int x=2,y=3;if(x==y)goto L;else goto M;L:return 4;M:return 5;return -1;}
+2	int main(){if(0)L:return 2;goto L;return -1;}
+2	int main(){if(1)L:return 2;goto L;return -1;}
+2	int main(){int x=2;{int x=3;}return x;}
+3	int main(){int x=2;{x=3;}return x;}
+0	int main(){return 0;}int f(){return 2;}
+6	int f(){return 2;}int main(){return 3*f();}
+16	int f(){return 2;}int g(){return 3;}int main(){return f()<<g();}
+17	int f(){int x=3;return x;}int g(){int x=4;return x;}int main(){int x=5;return f()*g()+x;}
+0	int f(int x){return 2;}int main(){return 0;}
+0	int f(int x,int y){return 2;}int main(){return 0;}
+2	int f(int x,int y){return 2;}int main(){return f(2,3);}
+6	int f(int x,int y){return x*y;}int main(){return f(2,3);}
+-5	int f(int x,int y,int z){return x-y-z;}int main(){return f(2,3,4);}
+3	int x;int f(){x=3;return 0;}int main(){f();return x;}
+3	int x=3;int main(){return x;}
+2	int main(){int x=2;return x++;}
+3	int main(){int x=2;return x++,x;}
+2	int main(){int x=2;return x--;}
+1	int main(){int x=2;return x--,x;}
+5	int main(){int x=2;return x+=3,x;}
+1	int main(){int x=3;return x&=5,x;}
+2	int main(){int x=5;return x%=3,x;}
+6	int main(){int x=2;return x*=3,x;}
+7	int main(){int x=5;return x|=3,x;}
+16	int main(){int x=2;return x<<=3,x;}
+2	int main(){int x=16;return x>>=3,x;}
+-1	int main(){int x=2;return x-=3,x;}
+6	int main(){int x=5;return x^=3,x;}
+3	int main(){int x=2;return ++x;}
+1	int main(){int x=2;return --x;}
+4	int main(){int x=2,y=3;return y+++--x;}
+8	int main(){int x=2,y=3,z;return z=y+++--x,z+y;}

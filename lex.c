@@ -288,10 +288,10 @@ static Token *get_token(TokenState *ts) {
 		++ts->loc;
 	char *start = ts->loc;
 	TokenKind kind = get_kind(ts);
-	return token_new(ts->src, (String){
+	return kind ? token_new(ts->src, (String){
 		.src = start,
 		.size = ts->loc - start,
-	}, kind);
+	}, kind) : NULL;
 }
 
 static Token *tokenize(char *src) {
@@ -301,7 +301,6 @@ static Token *tokenize(char *src) {
 	};
 	Token head;
 	Token *tk = &head;
-	while(*ts->loc != '\0')
-		tk = tk->next = get_token(ts);
+	while(tk = tk->next = get_token(ts));
 	return head.next;
 }
