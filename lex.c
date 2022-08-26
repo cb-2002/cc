@@ -5,6 +5,7 @@ enum TokenKind {
 	TK_ADD_A,
 	TK_AND_A,
 	TK_BREAK,
+	TK_COMMENT,
 	TK_CONTINUE,
 	TK_DEC,
 	TK_DIV_A,
@@ -32,6 +33,7 @@ enum TokenKind {
 	TK_SUB_A,
 	TK_TYPE,
 	TK_WHILE,
+	TK_WHITESPACE,
 	TK_XOR_A,
 
 	TK_COUNT,
@@ -94,10 +96,27 @@ static TokenKind lex_keyword(char *start, unsigned len) {
 	return 0;
 }
 
+static void scan_comment(TokenState *ts) {
+	ts->loc += 2;
+	while(!(ts->loc[0] == '*' && ts->loc[1] == '/')) {
+		if (!*ts->loc)
+			error_at(ts->src, ts->loc, "expected '*/'\n");
+		if (ts->loc[0] == '/' && ts->loc[1] == '*')
+			scan_comment(ts);
+		else
+			++ts->loc;
+	}
+	ts->loc += 2;
+}
+
 static TokenKind get_kind(TokenState *ts) {
-	TokenKind k;
+	TokenKind k = 0;
 	char *c = ts->loc;
 	switch(*c) {
+		// whitespace
+		case ' ':
+			k = TK_WHITESPACE;
+			break;
 		// single character operators
 		case '(':
 		case ')':
@@ -123,6 +142,9 @@ static TokenKind get_kind(TokenState *ts) {
 			break;
 		case '/':
 			switch(*++c) {
+				case '*':
+					scan_comment(ts);
+					return TK_COMMENT;
 				case '=':
 					k = TK_DIV_A;
 					break;
@@ -276,7 +298,7 @@ static TokenKind get_kind(TokenState *ts) {
 			ts->loc = c;
 			return k;
 	}
-	if(c == ts->loc)
+	if(!k)
 		k = *c;
 	ts->loc = ++c;
 	return k;
@@ -284,14 +306,20 @@ static TokenKind get_kind(TokenState *ts) {
 
 // TODO merge this with get_kind, as there's shared code
 static Token *get_token(TokenState *ts) {
-	while(*ts->loc == ' ')
-		++ts->loc;
 	char *start = ts->loc;
 	TokenKind kind = get_kind(ts);
-	return kind ? token_new(ts->src, (String){
-		.src = start,
-		.size = ts->loc - start,
-	}, kind) : NULL;
+	switch (kind) {
+		case '\0':
+			return NULL;
+		case TK_WHITESPACE:
+		case TK_COMMENT:
+			return get_token(ts);
+		default:
+			return token_new(ts->src, (String){
+				.src = start,
+				.size = ts->loc - start,
+			}, kind);
+	}
 }
 
 static Token *tokenize(char *src) {
