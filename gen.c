@@ -2,7 +2,7 @@ static void gen_node(Node *);
 
 static void gen_addr(Node *nd) {
 	printf("; %d", ((Var *)nd->data)->offset * 8);
-	print_string(nd->tk->str);
+	print_token(nd->tk);
 	printf("\n");
 	switch(nd->kind) {
 		case ND_VAR:
@@ -12,7 +12,7 @@ static void gen_addr(Node *nd) {
 				printf("sub rax, %d\n", 8 * offset);
 			} else {
 				printf("mov rax, ");
-				print_string(nd->tk->str);
+				print_token(nd->tk);
 				printf("\n");
 			}
 			return;
@@ -29,12 +29,12 @@ static void gen_node(Node *nd) {
 	if(!nd)
 		return;
 	printf("; ");
-	print_string(nd->tk->str);
+	print_token(nd->tk);
 	printf("\n");
 	switch(nd->kind) {
 		case ND_INT:
 			printf("mov rax, ");
-			print_string(nd->tk->str);
+			print_token(nd->tk);
 			printf("\n");
 			return;
 		case ND_ADD:
@@ -272,17 +272,17 @@ static void gen_node(Node *nd) {
 			return;
 		case ND_LABEL:
 			printf(".");
-			print_string(nd->tk->str);
+			print_token(nd->tk);
 			printf(":\n");
 			gen_node(FIRST(nd));
 			return;
 		case ND_GOTO:
 			printf("jmp .");
-			print_string(FIRST(nd)->tk->str);
+			print_token(FIRST(nd)->tk);
 			printf("\n");
 			return;
 		case ND_FN:
-			print_string(nd->tk->str);
+			print_token(nd->tk);
 			printf(":\n");
 			printf("push rbp\n");
 			printf("mov rbp, rsp\n");
@@ -294,7 +294,7 @@ static void gen_node(Node *nd) {
 			// TODO alias for FIRST AND SECOND?
 			gen_node(SECOND(nd));
 			printf("call ");
-			print_string(FIRST(nd)->tk->str);
+			print_token(FIRST(nd)->tk);
 			printf("\n");
 			printf("add rsp, %d\n", 8 * node_depth(SECOND(nd)));
 			return;
@@ -342,15 +342,15 @@ static void gen(ParseState *ps) {
 			Node *nd = FIRST(decl);
 			switch(nd->kind) {
 				case ND_VAR:
-					print_string(nd->tk->str);
+					print_token(nd->tk);
 					printf(" dw 0\n");
 					break;
 				case ND_ASSIGN:
 					Node *var = FIRST(nd), *val = SECOND(nd);
-					print_string(var->tk->str);
+					print_token(var->tk);
 					printf(" dw ");
 					assert(val->kind == ND_INT);
-					print_string(val->tk->str);
+					print_token(val->tk);
 					printf("\n");
 					break;
 				default:

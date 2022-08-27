@@ -47,6 +47,10 @@ struct Token {
 	Token *next;
 };
 
+static void print_token(Token *tk) {
+	print_string(tk->str);
+}
+
 static Token *token_new(char *src, String str, TokenKind kind) {
 	Token *tk = malloc(sizeof(Token));
 	tk->kind = kind;
