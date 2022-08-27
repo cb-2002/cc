@@ -96,10 +96,10 @@ static Var *var_new(ParseState *ps) {
 	return v;
 }
 
-static Var *var_find(ParseState *ps, String s) {
+static Var *var_find(ParseState *ps, Token *tk) {
 	for(Scope *scope = ps->scope; scope; scope = scope->parent)
 		for(Var *v = scope->vars; v; v = v->next)
-			if(string_cmp(s, v->tk->str))
+			if(tk->len == ps->tk->len && 0 == memcmp(tk->pos, v->tk->pos, v->tk->len))
 				return v;
 	return NULL;
 }
@@ -253,7 +253,7 @@ static Node *parse_atom(ParseState *ps) {
 			return nd;
 		case TK_ID:
 			nd = node_new(ps, ND_VAR);
-			Var *v = var_find(ps, nd->tk->str);
+			Var *v = var_find(ps, nd->tk);
 			if(!v)
 				error_token(ps->tk, "unknown var\n");
 			nd->data = v;

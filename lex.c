@@ -41,32 +41,44 @@ enum TokenKind {
 
 typedef struct Token Token;
 struct Token {
-	char *src;
-	String str;
+	char *line, *pos;
+	unsigned len;
 	TokenKind kind;
 	Token *next;
 };
 
 static void print_token(Token *tk) {
-	print_string(tk->str);
+	printf("%.*s", tk->len, tk->pos);
 }
 
-static Token *token_new(char *src, String str, TokenKind kind) {
+static Token *token_new(char *line, char *pos, unsigned len, TokenKind kind) {
 	Token *tk = malloc(sizeof(Token));
 	tk->kind = kind;
-	tk->src = src;
-	tk->str = str;
+	tk->line = line;
+	tk->pos = pos;
+	tk->len = len;
 	tk->next = NULL;
 	return tk;
 }
 
+__declspec(noreturn)
+static void error_at(char *line, char *pos, char *format, ...) {
+	va_list args;
+	va_start(args, format);
+	vprintf(format, args);
+	va_end(args);
+	unsigned len = 1;
+	while (line[len] != '\n' || line[len] != '\0')
+		++len;
+	error("%.*s\n%*s^\n", len, line, (int)(pos - line), "");
+}
+
 #define error_token(tk, fmt, ...) \
-	error_at(tk->src, tk->str.src, fmt, __VA_ARGS__)
+	error_at(tk->line, tk->pos, fmt, __VA_ARGS__)
 
 typedef struct TokenState TokenState;
 struct TokenState {
-	char *src;
-	char *loc;
+	char *line, *pos;
 };
 
 static bool is_int(char c) {
@@ -80,7 +92,7 @@ static bool is_alpha(char c) {
 static TokenKind lex_keyword(TokenState *ts) {
 	unsigned len = 0;
 	TokenKind k = TK_ID;
-	while (is_alpha(ts->loc[++len]));
+	while (is_alpha(ts->pos[++len]));
 	static struct {
 		char *key;
 		TokenKind value;
@@ -98,29 +110,29 @@ static TokenKind lex_keyword(TokenState *ts) {
 		{ "while", TK_WHILE, },
 	};
 	for (int i = 0; i < sizeof(map)/sizeof(map[0]); ++i)
-		if (strlen(map[i].key) == len && 0 == memcmp(map[i].key, ts->loc, len)) {
+		if (strlen(map[i].key) == len && 0 == memcmp(map[i].key, ts->pos, len)) {
 			k = map[i].value;
 			break;
 		}
-	ts->loc += len - 1;
+	ts->pos += len - 1;
 	return k;
 }
 
 static void scan_comment(TokenState *ts) {
-	ts->loc += 2;
-	while(!(ts->loc[0] == '*' && ts->loc[1] == '/')) {
-		if (!*ts->loc)
-			error_at(ts->src, ts->loc, "expected '*/'\n");
-		if (ts->loc[0] == '/' && ts->loc[1] == '*')
+	ts->pos += 2;
+	while(!(ts->pos[0] == '*' && ts->pos[1] == '/')) {
+		if (!*ts->pos)
+			error_at(ts->line, ts->pos, "expected '*/'\n");
+		if (ts->pos[0] == '/' && ts->pos[1] == '*')
 			scan_comment(ts);
 		else
-			++ts->loc;
+			++ts->pos;
 	}
-	ts->loc += 2;
+	ts->pos += 2;
 }
 
 static TokenKind get_kind(TokenState *ts) {
-	switch (ts->loc[0]) {
+	switch (ts->pos[0]) {
 		// whitespace
 		case ' ':
 			return TK_WHITESPACE;
@@ -135,126 +147,126 @@ static TokenKind get_kind(TokenState *ts) {
 		case '{':
 		case '}':
 		case '~':
-			return ts->loc[0];
+			return ts->pos[0];
 		// double character operators
 		case '%':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '=':
-					++ts->loc;
+					++ts->pos;
 					return TK_MOD_A;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		case '/':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '*':
 					scan_comment(ts);
 					return TK_COMMENT;
 				case '=':
-					++ts->loc;
+					++ts->pos;
 					return TK_DIV_A;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		case '^':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '=':
-					++ts->loc;
+					++ts->pos;
 					return TK_XOR_A;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		case '*':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '=':
-					++ts->loc;
+					++ts->pos;
 					return TK_MUL_A;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		case '+':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '+':
-					++ts->loc;
+					++ts->pos;
 					return TK_INC;
 				case '=':
-					++ts->loc;
+					++ts->pos;
 					return TK_ADD_A;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		case '-':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '-':
-					++ts->loc;
+					++ts->pos;
 					return TK_DEC;
 				case '=':
-					++ts->loc;
+					++ts->pos;
 					return TK_SUB_A;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		case '&':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '&':
-					++ts->loc;
+					++ts->pos;
 					return TK_LAND;
 				case '=':
-					++ts->loc;
+					++ts->pos;
 					return TK_AND_A;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		case '|':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '=':
-					++ts->loc;
+					++ts->pos;
 					return TK_OR_A;
 				case '|':
-					++ts->loc;
+					++ts->pos;
 					return TK_LOR;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		case '<':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '<':
-					++ts->loc;
-					if (ts->loc[1] == '=') {
-						++ts->loc;
+					++ts->pos;
+					if (ts->pos[1] == '=') {
+						++ts->pos;
 						return TK_SHL_A;
 					}
 					return TK_SHL;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		case '>':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '>':
-					++ts->loc;
-					if (ts->loc[1] == '=') {
-						++ts->loc;
+					++ts->pos;
+					if (ts->pos[1] == '=') {
+						++ts->pos;
 						return TK_SHR_A; 
 					}
 					return TK_SHR;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		case '=':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '=':
-					++ts->loc;
+					++ts->pos;
 					return TK_EQ;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		case '!':
-			switch (ts->loc[1]) {
+			switch (ts->pos[1]) {
 				case '=':
-					++ts->loc;
+					++ts->pos;
 					return TK_NE;
 				default:
-					return ts->loc[0];
+					return ts->pos[0];
 			}
 		// numbres
 		case '0':
@@ -267,8 +279,8 @@ static TokenKind get_kind(TokenState *ts) {
 		case '7':
 		case '8':
 		case '9':
-			while (is_int(ts->loc[1]))
-				++ts->loc;
+			while (is_int(ts->pos[1]))
+				++ts->pos;
 			return TK_INT;
 		case 'a': case 'A':
 		case 'b': case 'B':
@@ -298,15 +310,15 @@ static TokenKind get_kind(TokenState *ts) {
 		case 'z': case 'Z':
 			return lex_keyword(ts);
 		default:
-			error_at(ts->src, ts->loc, "unknown token: '%c'\n", ts->loc[0]);
+			error_at(ts->line, ts->pos, "unknown token: '%c'\n", ts->pos[0]);
 	}
 }
 
 // TODO merge this with get_kind, as there's shared code
 static Token *get_token(TokenState *ts) {
-	char *start = ts->loc;
+	char *start = ts->pos;
 	TokenKind kind = get_kind(ts);
-	++ts->loc;
+	++ts->pos;
 	switch (kind) {
 		case '\0':
 			return NULL;
@@ -314,17 +326,14 @@ static Token *get_token(TokenState *ts) {
 		case TK_COMMENT:
 			return get_token(ts);
 		default:
-			return token_new(ts->src, (String){
-				.src = start,
-				.size = ts->loc - start,
-			}, kind);
+			return token_new(ts->line, start, ts->pos - start, kind);
 	}
 }
 
 static Token *tokenize(char *src) {
 	TokenState *ts = &(TokenState){
-		.src = src,
-		.loc = src,
+		.line = src,
+		.pos = src,
 	};
 	Token head;
 	Token *tk = &head;
