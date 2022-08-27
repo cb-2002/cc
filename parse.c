@@ -65,7 +65,7 @@ typedef struct Var Var;
 struct Var {
 	int offset;
 	Var *next;
-	String s;
+	Token *tk;
 };
 
 typedef struct Scope Scope;
@@ -92,14 +92,14 @@ struct ParseState {
 
 static Var *var_new(ParseState *ps) {
 	Var *v = malloc(sizeof(Var));
-	v->s = ps->tk->str;
+	v->tk = ps->tk;
 	return v;
 }
 
 static Var *var_find(ParseState *ps, String s) {
 	for(Scope *scope = ps->scope; scope; scope = scope->parent)
 		for(Var *v = scope->vars; v; v = v->next)
-			if(string_cmp(s, v->s))
+			if(string_cmp(s, v->tk->str))
 				return v;
 	return NULL;
 }
