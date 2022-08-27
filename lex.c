@@ -134,6 +134,8 @@ static void scan_comment(TokenState *ts) {
 static TokenKind get_kind(TokenState *ts) {
 	switch (ts->pos[0]) {
 		// whitespace
+		case '\n':
+			ts->line = ts->pos + 1;
 		case ' ':
 			return TK_WHITESPACE;
 		// single character operators
