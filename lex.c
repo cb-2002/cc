@@ -94,6 +94,16 @@ static bool is_alpha(char c) {
 	return 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z';
 }
 
+static bool is_whitespace(char c) {
+	switch (c) {
+		case ' ':
+		case '\t':
+			return true;
+		default:
+			return false;
+	}
+}
+
 typedef struct TokenMap TokenMap;
 struct TokenMap {
 	char *key;
@@ -133,12 +143,7 @@ static TokenKind scan_directive(TokenState *ts) {
 }
 
 static void scan_whitespace(TokenState *ts) {
-	++ts->pos;
-	switch (ts->pos[0]) {
-		case ' ':
-		case '\t':
-			scan_whitespace(ts);
-	}
+	while (is_whitespace((++ts->pos)[0]));
 }
 
 static void scan_comment(TokenState *ts) {
