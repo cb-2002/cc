@@ -68,7 +68,7 @@ static void error_at(char *line, char *pos, char *format, ...) {
 	vprintf(format, args);
 	va_end(args);
 	unsigned len = 1;
-	while (line[len] != '\n' || line[len] != '\0')
+	while (line[len] != '\n' && line[len] != '\0')
 		++len;
 	error("%.*s\n%*s^\n", len, line, (int)(pos - line), "");
 }
