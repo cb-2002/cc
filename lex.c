@@ -149,7 +149,7 @@ static void scan_comment(TokenState *ts) {
 }
 
 static Token *scan_newline(TokenState *ts) {
-	ts->line = ++ts->pos;
+	ts->line = ts->pos + 1;
 	scan_whitespace(ts);
 	return (ts->pos[0] == '#' ? scan_directive : scan)(ts);
 }
