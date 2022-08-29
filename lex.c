@@ -130,6 +130,7 @@ static void scan_whitespace(TokenState *ts) {
 	++ts->pos;
 	switch (ts->pos[0]) {
 		case ' ':
+		case '\t':
 			scan_whitespace(ts);
 	}
 }
