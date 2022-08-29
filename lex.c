@@ -159,19 +159,15 @@ static void scan_comment(TokenState *ts) {
 	ts->pos += 2;
 }
 
-static TokenKind scan_newline(TokenState *ts) {
-	ts->line = ts->pos + 1;
-	scan_whitespace(ts);
-	return (ts->pos[0] == '#' ? scan_directive : scan)(ts);
-}
-
 static TokenKind scan(TokenState *ts) {
 	TokenKind k;
 	ts->start = ts->pos;
 	switch (ts->pos[0]) {
 		// whitespace
 		case '\n':
-			return scan_newline(ts);
+			scan_whitespace(ts);
+			ts->line = ts->pos;
+			return (ts->pos[0] == '#' ? scan_directive : scan)(ts);
 		case ' ':
 			scan_whitespace(ts); 
 			return scan(ts);
