@@ -190,6 +190,10 @@ static Token *scan(TokenState *ts) {
 				case '*':
 					scan_comment(ts);
 					return scan(ts);
+				case '/':
+					while (ts->pos[0] != '\n')
+						++ts->pos;
+					return scan(ts);
 				case '=':
 					++ts->pos;
 					return token_new(ts, TK_DIV_A);
