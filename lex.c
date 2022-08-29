@@ -126,6 +126,10 @@ static Token *scan_keyword(TokenState *ts) {
 	return token_new(ts, k ? k : TK_ID);
 }
 
+static Token *scan_directive(TokenState *ts) {
+	error_at(ts->line, ts->pos, "nye");
+}
+
 static void scan_whitespace(TokenState *ts) {
 	++ts->pos;
 	switch (ts->pos[0]) {
