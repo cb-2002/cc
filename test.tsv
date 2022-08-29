@@ -122,3 +122,4 @@ SKIP 5	int main(){int x,y;return x=4,*(&x-8)=5,y;}
 8	int main(){int x=2,y=3,z;return z=y+++--x,z+y;}
 0 int /* ... */ main(){return /* // */ 0;}
 0 int /*/*/**/*/*/ main(){return 0;}
+3 int main(){int /* /* ... */ */x = 3;return x;}

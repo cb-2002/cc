@@ -65,7 +65,6 @@ static Token *token_new(TokenState *ts, TokenKind kind) {
 	tk->line = ts->line;
 	tk->pos = ts->start;
 	tk->len = ts->pos - ts->start;
-	ts->start = ts->pos;
 	tk->next = scan(ts);
 	return tk;
 }
@@ -133,7 +132,6 @@ static void scan_whitespace(TokenState *ts) {
 		case ' ':
 			scan_whitespace(ts);
 	}
-	ts->start = ts->pos;
 }
 
 static void scan_comment(TokenState *ts) {
@@ -152,11 +150,12 @@ static void scan_comment(TokenState *ts) {
 static Token *scan_newline(TokenState *ts) {
 	ts->line = ++ts->pos;
 	scan_whitespace(ts);
-	return scan(ts);
+	return (ts->pos[0] == '#' ? scan_directive : scan)(ts);
 }
 
 static Token *scan(TokenState *ts) {
 	TokenKind k;
+	ts->start = ts->pos;
 	switch (ts->pos[0]) {
 		case '\0':
 			return NULL;
