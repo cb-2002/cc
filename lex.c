@@ -169,6 +169,7 @@ static TokenKind scan(TokenState *ts) {
 			ts->line = ts->pos;
 			return (ts->pos[0] == '#' ? scan_directive : scan)(ts);
 		case ' ':
+		case '\t':
 			scan_whitespace(ts); 
 			return scan(ts);
 		// single character operators
