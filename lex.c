@@ -85,6 +85,7 @@ static Token *token_new(TokenState *ts) {
 		return NULL;
 	Token *tk = malloc(sizeof(Token));
 	tk->kind = kind;
+	tk->file = ts->file;
 	tk->line = ts->line;
 	tk->pos = ts->start;
 	tk->len = ++ts->pos - ts->start;
@@ -93,7 +94,7 @@ static Token *token_new(TokenState *ts) {
 }
 
 __declspec(noreturn)
-static void error_at(char *line, char *pos, char *format, ...) {
+static void error_at(char *file, char *line, char *pos, char *format, ...) {
 	va_list args;
 	va_start(args, format);
 	vprintf(format, args);
@@ -101,11 +102,11 @@ static void error_at(char *line, char *pos, char *format, ...) {
 	unsigned len = 1;
 	while (line[len] != '\n' && line[len] != '\0')
 		++len;
-	error("%.*s\n%*s^\n", len, line, (int)(pos - line), "");
+	error("in %s\n%.*s\n%*s^\n", file, len, line, (int)(pos - line), "");
 }
 
 #define error_token(tk, fmt, ...) \
-	error_at(tk->line, tk->pos, fmt, __VA_ARGS__)
+	error_at(tk->file, tk->line, tk->pos, fmt, __VA_ARGS__)
 
 static bool is_int(char c) {
 	return '0' <= c && c <= '9';
@@ -164,7 +165,7 @@ static char *scan_filename(TokenState *ts, char end) {
 	unsigned len = 0;
 	while (ts->pos[++len] != end)
 		if (ts ->pos[len] == '\n')
-			error_at(ts->line, ts->pos, "expected '%c'\n", end);
+			error_at(ts->file, ts->line, ts->pos, "expected '%c'\n", end);
 	ts->pos += len + 1;
 	char *src = malloc(sizeof(char) * (len + 1));
 	memcpy(src, ts->start, len);
@@ -186,7 +187,7 @@ static TokenKind scan_include(TokenState *ts) {
 			file = scan_filename(ts, '>');
 			break;
 		default:
-			error_at(ts->line, ts->pos, "expected '\"' or '<'");
+			error_at(ts->file, ts->line, ts->pos, "expected '\"' or '<'");
 	}
 	token_state_push(ts, file);
 	return scan(ts);
@@ -203,7 +204,7 @@ static TokenKind scan_directive(TokenState *ts) {
 		case TK_INCLUDE:
 			return scan_include(ts);
 		default:
-			error_at(ts->line, ts->pos, "unknown directive\n");
+			error_at(ts->file, ts->line, ts->pos, "unknown directive\n");
 	}
 }
 
@@ -211,7 +212,7 @@ static void scan_comment(TokenState *ts) {
 	ts->pos += 2;
 	while(!(ts->pos[0] == '*' && ts->pos[1] == '/')) {
 		if (!*ts->pos)
-			error_at(ts->line, ts->pos, "expected '*/'\n");
+			error_at(ts->file, ts->line, ts->pos, "expected '*/'\n");
 		if (ts->pos[0] == '/' && ts->pos[1] == '*')
 			scan_comment(ts);
 		else
@@ -419,7 +420,7 @@ static TokenKind scan(TokenState *ts) {
 		case 'z': case 'Z':
 			return scan_keyword(ts);
 		default:
-			error_at(ts->line, ts->pos, "unknown token: '%c'\n", ts->pos[0]);
+			error_at(ts->file, ts->line, ts->pos, "unknown token: '%c'\n", ts->pos[0]);
 	}
 }
 
