@@ -13,10 +13,6 @@
 
 #define error(...) (printf(__VA_ARGS__),exit(1))
 
-#include "lex.c"
-#include "parse.c"
-#include "gen.c"
-
 static char *read_file(char *name) {
 	FILE *f = fopen(name, "r");
 	if(!f)
@@ -37,6 +33,10 @@ static char *read_file(char *name) {
 	buf[len - 1] = '\0';
 	return buf;
 }
+
+#include "lex.c"
+#include "parse.c"
+#include "gen.c"
 
 int main(int argc, char **argv) {
 	assert(argc == 2);

@@ -7,7 +7,6 @@ enum TokenKind {
 	TK_BREAK,
 	TK_COMMENT,
 	TK_CONTINUE,
-	TK_DEFINE,
 	TK_DEC,
 	TK_DIV_A,
 	TK_DO,
@@ -19,6 +18,7 @@ enum TokenKind {
 	TK_ID,
 	TK_IF,
 	TK_INC,
+	TK_INCLUDE,
 	TK_LAND,
 	TK_LE,
 	TK_LOR,
@@ -43,7 +43,21 @@ enum TokenKind {
 typedef struct TokenState TokenState;
 struct TokenState {
 	char *line, *start, *pos;
+	TokenState *next;
 };
+
+static void token_state_push(TokenState *ts, char *src) {
+	TokenState *tmp = malloc(sizeof(TokenState));
+	memcpy(tmp, ts, sizeof(TokenState));
+	ts->line = src;
+	ts->pos = src;
+	ts->next = tmp;
+}
+
+static void token_state_pop(TokenState *ts) {
+	memcpy(ts, ts->next, sizeof(TokenState));
+	free(ts->next);
+}
 
 typedef struct Token Token;
 struct Token {
@@ -138,12 +152,53 @@ static TokenKind scan_keyword(TokenState *ts) {
 	return k ? k : TK_ID;
 }
 
-static TokenKind scan_directive(TokenState *ts) {
-	error_at(ts->line, ts->pos, "nye");
+static char *scan_filename(TokenState *ts, char end) {
+	ts->start = ++ts->pos;
+	unsigned len = 0;
+	while (ts->pos[++len] != end)
+		if (ts ->pos[len] == '\n')
+			error_at(ts->line, ts->pos, "expected '%c'\n", end);
+	ts->pos += len + 1;
+	char *src = malloc(sizeof(char) * (len + 1));
+	memcpy(src, ts->start, len);
+	src[len] = '\0';
+	return src;
 }
 
 static void scan_whitespace(TokenState *ts) {
 	while (is_whitespace((++ts->pos)[0]));
+}
+
+static TokenKind scan_include(TokenState *ts) {
+	char *filename;
+	switch (ts->pos[0]) {
+		case '"':
+			filename = scan_filename(ts, '"');
+			break;
+		case '<':
+			filename = scan_filename(ts, '>');
+			break;
+		default:
+			error_at(ts->line, ts->pos, "expected '\"' or '<'");
+	}
+	char *src = read_file(filename);
+	token_state_push(ts, src);
+	return scan(ts);
+}
+
+static TokenKind scan_directive(TokenState *ts) {
+	ts->start = ++ts->pos;
+	static TokenMap map[] = {
+		{ "include", TK_INCLUDE, },
+	};
+	TokenKind k = scan_word(ts, map, sizeof(map) / sizeof(map[0]));
+	scan_whitespace(ts);
+	switch (k) {
+		case TK_INCLUDE:
+			return scan_include(ts);
+		default:
+			error_at(ts->line, ts->pos, "unknown directive\n");
+	}
 }
 
 static void scan_comment(TokenState *ts) {
@@ -163,11 +218,16 @@ static TokenKind scan(TokenState *ts) {
 	TokenKind k;
 	ts->start = ts->pos;
 	switch (ts->pos[0]) {
+		case '\0':
+			if (!ts->next)
+				return '\0';
+			token_state_pop(ts);
+			return scan(ts);
 		// whitespace
 		case '\n':
 			scan_whitespace(ts);
 			ts->line = ts->pos;
-			return (ts->pos[0] == '#' ? scan_directive : scan)(ts);
+			return scan(ts);
 		case ' ':
 		case '\t':
 			scan_whitespace(ts); 
@@ -175,7 +235,6 @@ static TokenKind scan(TokenState *ts) {
 		// single character operators
 		case '(':
 		case ')':
-		case '\0':
 		case ',':
 		case ':':
 		case ';':
@@ -185,6 +244,10 @@ static TokenKind scan(TokenState *ts) {
 		case '~':
 			return ts->pos[0];
 		// double character operators
+		case '#':
+			if (ts->line != ts->pos)
+				return ts->pos[0];
+			return scan_directive(ts);
 		case '%':
 			switch (ts->pos[1]) {
 				case '=':
@@ -357,7 +420,6 @@ static TokenKind scan(TokenState *ts) {
 static Token *tokenize(char *src) {
 	TokenState *ts = &(TokenState){
 		.line = src,
-		.start =src,
 		.pos = src,
 	};
 	Token head, *tk = &head;
