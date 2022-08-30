@@ -353,6 +353,12 @@ static void gen(ParseState *ps) {
 					print_token(val->tk);
 					printf("\n");
 					break;
+				// function prototype
+				case ND_FN:
+					printf("extern ");
+					print_token(nd->tk);
+					printf("\n");
+					break;
 				default:
 					error_token(nd->tk, "unknown node type\n");
 			}
