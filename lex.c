@@ -42,15 +42,22 @@ enum TokenKind {
 
 typedef struct TokenState TokenState;
 struct TokenState {
-	char *line, *start, *pos;
+	char *file, *line, *start, *pos;
 	TokenState *next;
 };
 
-static void token_state_push(TokenState *ts, char *src) {
-	TokenState *tmp = malloc(sizeof(TokenState));
-	memcpy(tmp, ts, sizeof(TokenState));
+static void token_state_init(TokenState *ts, char *file) {
+	char *src = read_file(file);
+	ts->file = file;
 	ts->line = src;
 	ts->pos = src;
+	ts->next = NULL;
+}
+
+static void token_state_push(TokenState *ts, char *file) {
+	TokenState *tmp = malloc(sizeof(TokenState));
+	memcpy(tmp, ts, sizeof(TokenState));
+	token_state_init(ts, file);
 	ts->next = tmp;
 }
 
@@ -61,7 +68,7 @@ static void token_state_pop(TokenState *ts) {
 
 typedef struct Token Token;
 struct Token {
-	char *line, *pos;
+	char *file, *line, *pos;
 	unsigned len;
 	TokenKind kind;
 	Token *next;
@@ -170,19 +177,18 @@ static void scan_whitespace(TokenState *ts) {
 }
 
 static TokenKind scan_include(TokenState *ts) {
-	char *filename;
+	char *file;
 	switch (ts->pos[0]) {
 		case '"':
-			filename = scan_filename(ts, '"');
+			file = scan_filename(ts, '"');
 			break;
 		case '<':
-			filename = scan_filename(ts, '>');
+			file = scan_filename(ts, '>');
 			break;
 		default:
 			error_at(ts->line, ts->pos, "expected '\"' or '<'");
 	}
-	char *src = read_file(filename);
-	token_state_push(ts, src);
+	token_state_push(ts, file);
 	return scan(ts);
 }
 
@@ -417,11 +423,9 @@ static TokenKind scan(TokenState *ts) {
 	}
 }
 
-static Token *tokenize(char *src) {
-	TokenState *ts = &(TokenState){
-		.line = src,
-		.pos = src,
-	};
+static Token *tokenize(char *file) {
+	TokenState *ts = &(TokenState){0};
+	token_state_init(ts, file);
 	Token head, *tk = &head;
 	while (tk = tk->next = token_new(ts));
 	return head.next;
