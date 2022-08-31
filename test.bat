@@ -9,7 +9,7 @@ for /f "tokens=1,*" %%a in (..\test.tsv) do (
 		echo %%b > tmp.c
 		cc.exe tmp.c > tmp.asm || goto :compile_error
 		nasm -f win64 tmp.asm -o tmp.obj || goto :compile_error
-		link /nologo /entry:main /out:tmp.exe tmp.obj || exit /b
+		link /nologo /entry:main /out:tmp.exe tmp.obj || goto :exit
 		tmp.exe
 		if not errorlevel == %%a goto :error
 	)
