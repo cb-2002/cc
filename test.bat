@@ -27,6 +27,5 @@ goto :exit
 echo got %errorlevel%, expected %expected%
 nasm -g -F cv8 -f win64 tmp.asm -o tmp.obj 
 link /pdb:tmp.pdf /debug /nologo /entry:main /out:tmp.exe tmp.obj 
-type tmp.asm
 popd
 goto :exit
