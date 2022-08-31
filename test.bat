@@ -3,7 +3,8 @@
 pushd build
 for /f "tokens=1,*" %%a in (..\test.tsv) do (
 	set expected=%%a
-	if not %%a == SKIP (
+	if %%a == break goto :exit
+	if not %%a == continue (
 		echo %%b
 		echo %%b > tmp.c
 		cc.exe tmp.c > tmp.asm || goto :compile_error
