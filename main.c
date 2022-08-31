@@ -10,6 +10,7 @@
 
 #include "string.c"
 #include "list.c"
+#include "vector.c"
 
 #define error(...) (printf(__VA_ARGS__),exit(1))
 

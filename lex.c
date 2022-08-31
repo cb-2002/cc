@@ -71,7 +71,6 @@ struct Token {
 	char *file, *line, *pos;
 	unsigned len;
 	TokenKind kind;
-	Token *next;
 };
 
 static void print_token(Token *tk) {
@@ -79,18 +78,21 @@ static void print_token(Token *tk) {
 }
 
 static TokenKind scan(TokenState *);
-static Token *token_new(TokenState *ts) {
+static bool token_new(TokenState *ts, Token **tokens) {
 	TokenKind kind = scan(ts);
-	if (!kind)
-		return NULL;
-	Token *tk = malloc(sizeof(Token));
-	tk->kind = kind;
-	tk->file = ts->file;
-	tk->line = ts->line;
-	tk->pos = ts->start;
-	tk->len = ++ts->pos - ts->start;
-	tk->next = NULL;
-	return tk;
+	Token tk = {
+		.kind = kind,
+		.file = ts->file,
+		.line = ts->line,
+		.pos = ts->start,
+		.len = ++ts->pos - ts->start,
+	};
+	vec_push_back(*tokens, tk);
+	return kind != '\0';
+}
+
+static bool token_cmp(Token *tk, Token *TK) {
+	return tk->len == TK->len && 0 == memcmp(tk->pos, TK->pos, tk->len);
 }
 
 __declspec(noreturn)
@@ -427,7 +429,7 @@ static TokenKind scan(TokenState *ts) {
 static Token *tokenize(char *file) {
 	TokenState *ts = &(TokenState){0};
 	token_state_init(ts, file);
-	Token head, *tk = &head;
-	while (tk = tk->next = token_new(ts));
-	return head.next;
+	Token *tokens = vec_new(1, sizeof(Token));
+	while (token_new(ts, &tokens));
+	return tokens;
 }

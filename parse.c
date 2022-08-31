@@ -99,7 +99,7 @@ static Var *var_new(ParseState *ps) {
 static Var *var_find(ParseState *ps, Token *tk) {
 	for(Scope *scope = ps->scope; scope; scope = scope->parent)
 		for(Var *v = scope->vars; v; v = v->next)
-			if(tk->len == ps->tk->len && 0 == memcmp(tk->pos, v->tk->pos, v->tk->len))
+			if(token_cmp(v->tk, tk))
 				return v;
 	return NULL;
 }
@@ -179,7 +179,7 @@ static unsigned get_stack_size(Node *nd) {
 // parsing functions
 
 static void token_next(ParseState *ps) {
-	ps->tk = ps->tk->next;
+	++ps->tk;
 }
 
 static bool token_equals(ParseState *ps, TokenKind k) {
@@ -614,7 +614,7 @@ static Node *parse_stmt(ParseState *ps) {
 			FIRST(nd) = parse_expr_stmt(ps);
 			break;
 		default:
-			if(ps->tk->next->kind == ':') {
+			if (ps->tk[1].kind == ':') {
 				nd = node_new(ps, ND_LABEL);
 				token_next(ps);
 				token_expect(ps, ':');
@@ -629,15 +629,15 @@ static Node *parse_stmt(ParseState *ps) {
 	return stmt;
 }
 
-static ParseState parse(Token *tk) {
+static ParseState parse(Token *tokens) {
 	ParseState *ps = &(ParseState){
-		.tk = tk,
+		.tk = tokens,
 		.scope = scope_new(0),
 		.fns = list_new(sizeof(Node *)),
 		.vars = list_new(sizeof(Node *)),
 	};
 	Node *nd;
-	while(ps->tk) {
+	while(ps->tk->kind != '\0') {
 		nd = parse_declaration(ps);
 		list_push_back(nd->kind == ND_FN ? &ps->fns : &ps->vars, nd);
 	}
