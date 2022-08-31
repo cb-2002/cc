@@ -5,9 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-
 #include "string.c"
 #include "list.c"
 #include "vector.c"
