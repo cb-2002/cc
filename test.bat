@@ -11,7 +11,7 @@ for /f "tokens=1,*" %%a in (..\test.tsv) do (
 		nasm -f win64 tmp.asm -o tmp.obj || goto :compile_error
 		link /nologo /entry:main /out:tmp.exe tmp.obj || goto :exit
 		tmp.exe
-		if not errorlevel == %%a goto :error
+		if not errorlevel == %%a goto :run_error
 	)
 )
 :exit
