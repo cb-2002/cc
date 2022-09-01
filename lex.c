@@ -42,15 +42,13 @@ typedef enum TokenKind TokenKind;
 
 typedef struct TokenState TokenState;
 struct TokenState {
-	char *file, *line, *start, *pos;
+	char *file, *start, *pos;
 	TokenState *next;
 };
 
 static void token_state_init(TokenState *ts, char *file) {
-	char *src = read_file(file);
 	ts->file = file;
-	ts->line = src;
-	ts->pos = src;
+	ts->pos = read_file(file);
 	ts->next = NULL;
 }
 
@@ -68,14 +66,9 @@ static void token_state_pop(TokenState *ts) {
 
 typedef struct Token Token;
 struct Token {
-	char *file, *line, *pos;
-	unsigned len;
+	char *file, *pos;
 	TokenKind kind;
 };
-
-static void print_token(Token *tk) {
-	printf("%.*s", tk->len, tk->pos);
-}
 
 static TokenKind scan(TokenState *);
 static bool token_new(TokenState *ts, Token **tokens) {
@@ -83,32 +76,56 @@ static bool token_new(TokenState *ts, Token **tokens) {
 	Token tk = {
 		.kind = kind,
 		.file = ts->file,
-		.line = ts->line,
 		.pos = ts->start,
-		.len = ++ts->pos - ts->start,
 	};
+	++ts->pos;
 	vec_push_back(*tokens, tk);
 	return kind != '\0';
 }
 
+static unsigned token_len(Token *tk) {
+	TokenState ts = {
+		.file = tk->file,
+		.pos = tk->pos,
+	};
+	scan(&ts);
+	return 1 + ts.pos - tk->pos;
+}
+
+static void print_token(Token *tk) {
+	printf("%.*s", token_len(tk), tk->pos);
+}
+
 static bool token_cmp(Token *tk, Token *TK) {
-	return tk->len == TK->len && 0 == memcmp(tk->pos, TK->pos, tk->len);
+	unsigned len = token_len(tk);
+	return len == token_len(TK) && 0 == memcmp(tk->pos, TK->pos, len);
+}
+
+static char *line_start(char *pos) {
+	while (*pos && *pos != '\n')
+		--pos;
+	return pos;
+}
+
+static char *line_end(char *pos) {
+	while (*pos && *pos != '\n')
+		++pos;
+	return pos;
 }
 
 __declspec(noreturn)
-static void error_at(char *file, char *line, char *pos, char *format, ...) {
+static void error_at(char *file, char *pos, char *format, ...) {
 	va_list args;
 	va_start(args, format);
 	vprintf(format, args);
 	va_end(args);
-	unsigned len = 1;
-	while (line[len] != '\n' && line[len] != '\0')
-		++len;
-	error("in %s\n%.*s\n%*s^\n", file, len, line, (int)(pos - line), "");
+	char *start = line_start(pos);
+	unsigned len = line_end(pos) - start;
+	error("in %s\n%.*s\n%*s^\n", file, len, start, (int)(pos - start), "");
 }
 
 #define error_token(tk, fmt, ...) \
-	error_at(tk->file, tk->line, tk->pos, fmt, __VA_ARGS__)
+	error_at(tk->file, tk->pos, fmt, __VA_ARGS__)
 
 static bool is_int(char c) {
 	return '0' <= c && c <= '9';
@@ -167,7 +184,7 @@ static char *scan_filename(TokenState *ts, char end) {
 	unsigned len = 0;
 	while (ts->pos[++len] != end)
 		if (ts ->pos[len] == '\n')
-			error_at(ts->file, ts->line, ts->pos, "expected '%c'\n", end);
+			error_at(ts->file, ts->pos, "expected '%c'\n", end);
 	ts->pos += len + 1;
 	char *src = malloc(sizeof(char) * (len + 1));
 	memcpy(src, ts->start, len);
@@ -189,7 +206,7 @@ static TokenKind scan_include(TokenState *ts) {
 			file = scan_filename(ts, '>');
 			break;
 		default:
-			error_at(ts->file, ts->line, ts->pos, "expected '\"' or '<'");
+			error_at(ts->file, ts->pos, "expected '\"' or '<'");
 	}
 	token_state_push(ts, file);
 	return scan(ts);
@@ -206,7 +223,7 @@ static TokenKind scan_directive(TokenState *ts) {
 		case TK_INCLUDE:
 			return scan_include(ts);
 		default:
-			error_at(ts->file, ts->line, ts->pos, "unknown directive\n");
+			error_at(ts->file, ts->pos, "unknown directive\n");
 	}
 }
 
@@ -214,7 +231,7 @@ static void scan_comment(TokenState *ts) {
 	ts->pos += 2;
 	while(!(ts->pos[0] == '*' && ts->pos[1] == '/')) {
 		if (!*ts->pos)
-			error_at(ts->file, ts->line, ts->pos, "expected '*/'\n");
+			error_at(ts->file, ts->pos, "expected '*/'\n");
 		if (ts->pos[0] == '/' && ts->pos[1] == '*')
 			scan_comment(ts);
 		else
@@ -234,9 +251,11 @@ static TokenKind scan(TokenState *ts) {
 			return scan(ts);
 		// whitespace
 		case '\n':
-			scan_whitespace(ts);
-			ts->line = ts->pos;
-			return scan(ts);
+			scan_whitespace(ts); 
+			if (ts->pos[0] != '#')
+				return scan(ts);
+			++ts->pos;
+			return scan_directive(ts);
 		case ' ':
 		case '\t':
 			scan_whitespace(ts); 
@@ -251,12 +270,12 @@ static TokenKind scan(TokenState *ts) {
 		case '{':
 		case '}':
 		case '~':
-			return ts->pos[0];
-		// double character operators
 		case '#':
-			if (ts->line != ts->pos)
+			if (ts->pos[-1])
 				return ts->pos[0];
+			++ts->pos;
 			return scan_directive(ts);
+		// double character operators
 		case '%':
 			switch (ts->pos[1]) {
 				case '=':
@@ -422,7 +441,7 @@ static TokenKind scan(TokenState *ts) {
 		case 'z': case 'Z':
 			return scan_keyword(ts);
 		default:
-			error_at(ts->file, ts->line, ts->pos, "unknown token: '%c'\n", ts->pos[0]);
+			error_at(ts->file, ts->pos, "unknown token: '%c'\n", ts->pos[0]);
 	}
 }
 
