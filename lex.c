@@ -1,4 +1,3 @@
-typedef enum TokenKind TokenKind;
 enum TokenKind {
 	TK_INT=256,
 
@@ -39,6 +38,7 @@ enum TokenKind {
 
 	TK_COUNT,
 };
+typedef enum TokenKind TokenKind;
 
 typedef struct TokenState TokenState;
 struct TokenState {

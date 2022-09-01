@@ -1,5 +1,6 @@
 @echo off
+set CF=-std=gnu99 -g -Wno-parentheses -Wno-switch -Wno-deprecated-declarations
 if not exist build mkdir build
 pushd build
-cl /Zi /nologo /Fe:cc.exe ..\main.c
+clang %CF% -g -o cc.exe ..\main.c
 popd

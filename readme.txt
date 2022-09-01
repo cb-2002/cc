@@ -1,9 +1,9 @@
 dependencies:
-msvc
+clang
 nasm
 
 build:
-add msvc and nasm to PATH
+add clang and nasm to PATH
 call build.bat
 
 run:

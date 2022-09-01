@@ -1,4 +1,3 @@
-typedef enum NodeKind NodeKind;
 enum NodeKind {
 	ND_UNKNOWN,
 	ND_ADDR,
@@ -60,6 +59,7 @@ enum NodeKind {
 	ND_XOR,
 	ND_XOR_A,
 };
+typedef enum NodeKind NodeKind;
 
 typedef struct Var Var;
 struct Var {
@@ -633,8 +633,8 @@ static ParseState parse(Token *tokens) {
 	ParseState *ps = &(ParseState){
 		.tk = tokens,
 		.scope = scope_new(0),
-		.fns = list_new(sizeof(Node *)),
-		.vars = list_new(sizeof(Node *)),
+		.fns = list_new(),
+		.vars = list_new(),
 	};
 	Node *nd;
 	while(ps->tk->kind != '\0') {
