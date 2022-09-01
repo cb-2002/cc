@@ -83,11 +83,13 @@ static Scope *scope_new(unsigned offset) {
 	return scope;
 }
 
+typedef struct Node Node;
 typedef struct ParseState ParseState;
 struct ParseState {
 	Token *tk;
 	Scope *scope;
 	List vars, fns;
+	Node *nodes;
 };
 
 static Var *var_new(ParseState *ps) {
@@ -114,7 +116,6 @@ static void scope_exit(ParseState *ps) {
 	ps->scope = ps->scope->parent;
 }
 
-typedef struct Node Node;
 struct Node {
 	NodeKind kind;
 	Token *tk;
@@ -149,10 +150,11 @@ struct Node {
 #define FN_BODY SECOND
 
 static Node *node_new(ParseState *ps, NodeKind kind) {
-	Node *nd = calloc(1,sizeof(Node));
-	nd->kind = kind;
-	nd->tk = ps->tk;
-	return nd;
+	Node nd = {
+		.kind = kind,
+		.tk = ps->tk,
+	};
+	return vec_push_back(ps->nodes, nd);
 }
 
 static Node *node_cpy(Node *nd) {
@@ -635,6 +637,7 @@ static ParseState parse(Token *tokens) {
 		.scope = scope_new(0),
 		.fns = list_new(),
 		.vars = list_new(),
+		.nodes = vec_new(1, sizeof(Node)),
 	};
 	Node *nd;
 	while(ps->tk->kind != '\0') {
