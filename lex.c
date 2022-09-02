@@ -40,22 +40,25 @@ enum TokenKind {
 };
 typedef enum TokenKind TokenKind;
 
+typedef struct Token Token;
 typedef struct TokenState TokenState;
 struct TokenState {
 	char *file, *start, *pos;
+	Token *tk;
 	TokenState *next;
 };
 
-static void token_state_init(TokenState *ts, char *file) {
+static void token_state_init(TokenState *ts, char *file, Token *tk) {
 	ts->file = file;
 	ts->pos = read_file(file);
+	ts->tk = tk;
 	ts->next = NULL;
 }
 
 static void token_state_push(TokenState *ts, char *file) {
 	TokenState *tmp = malloc(sizeof(TokenState));
 	memcpy(tmp, ts, sizeof(TokenState));
-	token_state_init(ts, file);
+	token_state_init(ts, file, ts->tk);
 	ts->next = tmp;
 }
 
@@ -64,14 +67,13 @@ static void token_state_pop(TokenState *ts) {
 	free(ts->next);
 }
 
-typedef struct Token Token;
 struct Token {
 	char *file, *pos;
 	TokenKind kind;
 };
 
 static TokenKind scan(TokenState *);
-static bool token_new(TokenState *ts, Token **tokens) {
+static bool token_new(TokenState *ts) {
 	TokenKind kind = scan(ts);
 	Token tk = {
 		.kind = kind,
@@ -79,7 +81,7 @@ static bool token_new(TokenState *ts, Token **tokens) {
 		.pos = ts->start,
 	};
 	++ts->pos;
-	vec_push_back(*tokens, tk);
+	vec_push_back(ts->tk, tk);
 	return kind != '\0';
 }
 
@@ -414,8 +416,7 @@ static TokenKind scan(TokenState *ts) {
 
 static Token *tokenize(char *file) {
 	TokenState *ts = &(TokenState){0};
-	token_state_init(ts, file);
-	Token *tokens = vec_new(1, sizeof(Token));
-	while (token_new(ts, &tokens));
-	return tokens;
+	token_state_init(ts, file, vec_new(1, sizeof(Token)));
+	while (token_new(ts));
+	return ts->tk;
 }
