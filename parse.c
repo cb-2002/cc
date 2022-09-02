@@ -1,63 +1,7 @@
 enum NodeKind {
-	ND_UNKNOWN,
-	ND_ADDR,
-	
-	ND_ADD,
-	ND_ADD_A,
-	ND_AND,
-	ND_AND_A,
-	ND_ARG,
-	ND_ASSIGN,
-	ND_BLOCK,
-	ND_BREAK,
-	ND_CALL,
-	ND_COMMA,
-	ND_CONTINUE,
-	ND_DECLARATION,
-	ND_DEREF,
-	ND_DIV,
-	ND_DO,
-	ND_EQ,
-	ND_FN,
-	ND_FOR,
-	ND_GE,
-	ND_GOTO,
-	ND_GT,
-	ND_IF,
-	ND_INT,
-	ND_LABEL,
-	ND_LAND,
-	ND_LE,
-	ND_LNOT,
-	ND_LOR,
-	ND_LT,
-	ND_MOD,
-	ND_MOD_A,
-	ND_MUL,
-	ND_MUL_A,
-	ND_NE,
-	ND_NEG,
-	ND_NOT,
-	ND_OR,
-	ND_OR_A,
-	ND_PARAM,
-	ND_POST_DEC,
-	ND_POST_INC,
-	ND_PRE_DEC,
-	ND_PRE_INC,
-	ND_RET,
-	ND_SHL,
-	ND_SHL_A,
-	ND_SHR,
-	ND_SHR_A,
-	ND_STMT,
-	ND_SUB,
-	ND_SUB_A,
-	ND_TERNARY,
-	ND_VAR,
-	ND_WHILE,
-	ND_XOR,
-	ND_XOR_A,
+#define x(a, b) a,
+#include "parse.inc"
+#undef x
 };
 typedef enum NodeKind NodeKind;
 
@@ -149,8 +93,16 @@ struct Node {
 #define FN_PARAMS FIRST
 #define FN_BODY SECOND
 
-static Node *node_new(ParseState *ps, NodeKind kind, unsigned len) {
-	unsigned size = sizeof(Node *) * len;
+static unsigned node_children(NodeKind kind) {
+	switch (kind) {
+#define x(a, b) case a: return b;
+#include "parse.inc"
+#undef x
+	}
+}
+
+static Node *node_new(ParseState *ps, NodeKind kind) {
+	unsigned size = sizeof(Node *) * node_children(kind);
 	Node *nd = malloc(sizeof(Node) + size);
 	nd->kind = kind;
 	nd->tk = ps->tk;
@@ -158,17 +110,15 @@ static Node *node_new(ParseState *ps, NodeKind kind, unsigned len) {
 	return nd;
 }
 
-static Node *node_cpy(Node *nd, unsigned len) {
-	unsigned size = sizeof(Node) + sizeof(Node *) * 2;
+static Node *node_cpy(Node *nd) {
+	unsigned size = sizeof(Node) + sizeof(Node *) * node_children(nd->kind);
 	Node *tmp = malloc(size);
 	memcpy(tmp, nd, size);
 	return tmp;
 }
 
-static Node *node_wrap(ParseState *ps, NodeKind kind, unsigned len,
-		Node *left) {
-	assert(len > 0);
-	Node *nd = node_new(ps, kind, len);
+static Node *node_wrap(ParseState *ps, NodeKind kind, Node *left) {
+	Node *nd = node_new(ps, kind);
 	LEFT(nd) = left;
 	return nd;
 }
@@ -224,7 +174,7 @@ static Node *parse_binary_left(
 	Node *nd = parse_child(ps);
 	NodeKind kind;
 	while(kind = get_node_kind[ps->tk->kind]) {
-		nd = node_wrap(ps, kind, 2, nd);
+		nd = node_wrap(ps, kind, nd);
 		token_next(ps);
 		SECOND(nd) = parse_child(ps);
 	}
@@ -239,7 +189,7 @@ static Node *parse_binary_right(
 	Node *nd = parse_child(ps);
 	NodeKind kind = get_node_kind[ps->tk->kind];
 	if(kind) {
-		nd = node_wrap(ps, kind, 2, nd);
+		nd = node_wrap(ps, kind, nd);
 		token_next(ps);
 		SECOND(nd) = parse_binary_left(ps, get_node_kind, parse_child);
 	}
@@ -250,7 +200,7 @@ static Node *parse_atom(ParseState *ps) {
 	Node *nd;
 	switch(ps->tk->kind) {
 		case TK_INT:
-			nd = node_new(ps, ND_INT, 0);
+			nd = node_new(ps, ND_INT);
 			break;
 		case '(':
 			token_next(ps);
@@ -258,7 +208,7 @@ static Node *parse_atom(ParseState *ps) {
 			token_expect(ps, ')');
 			return nd;
 		case TK_ID:
-			nd = node_new(ps, ND_VAR, 0);
+			nd = node_new(ps, ND_VAR);
 			Var *v = var_find(ps, nd->tk);
 			if(!v)
 				error_token(ps->tk, "unknown var\n");
@@ -272,7 +222,7 @@ static Node *parse_atom(ParseState *ps) {
 }
 
 static Node *parse_args(ParseState *ps) {
-	Node *nd = node_new(ps, ND_ARG, 2);
+	Node *nd = node_new(ps, ND_ARG);
 	FIRST(nd) = parse_assign(ps);
 	if(token_consume(ps, ','))
 		SECOND(nd) = parse_args(ps);
@@ -293,13 +243,13 @@ static Node *parse_postfix(ParseState *ps) {
 		case 0:
 			return nd;
 		case ND_CALL:
-			nd = node_wrap(ps, kind, 2, nd);
+			nd = node_wrap(ps, kind, nd);
 			token_next(ps);
 			if(!token_consume(ps, ')'))
 				SECOND(nd) = parse_args(ps);
 			return nd;
 		default:
-			nd = node_wrap(ps, kind, 1, nd);
+			nd = node_wrap(ps, kind, nd);
 			token_next(ps);
 			return nd;
 	}
@@ -318,7 +268,7 @@ static Node *parse_prefix(ParseState *ps) {
 	token_consume(ps, '+'); // ignoring unary + as it does nothing
 	NodeKind kind = get_node_kind[ps->tk->kind];
 	if(kind) {
-		Node *nd = node_new(ps, kind, 1);
+		Node *nd = node_new(ps, kind);
 		token_next(ps);
 		FIRST(nd) = parse_prefix(ps);
 		return nd;
@@ -430,7 +380,7 @@ static Node *parse_assign(ParseState *ps) {
 		case ND_SUB_A:
 		case ND_XOR_A:
 			--nd->kind;
-			RIGHT(nd) = node_cpy(nd, 2);
+			RIGHT(nd) = node_cpy(nd);
 			nd->kind = ND_ASSIGN;
 	}
 	return nd;
@@ -439,7 +389,7 @@ static Node *parse_assign(ParseState *ps) {
 static Node *parse_ternary(ParseState *ps) {
 	Node *nd = parse_assign(ps);
 	if(token_equals(ps, '?')) {
-		nd = node_wrap(ps, ND_IF, 3, nd);
+		nd = node_wrap(ps, ND_IF, nd);
 		token_next(ps);
 		IF_BODY(nd) = parse_expr(ps);
 		token_expect(ps, ':');
@@ -460,10 +410,10 @@ static Node *parse_expr(ParseState *ps) {
 	Node *nd;
 	switch(ps->tk->kind) {
 		case TK_BREAK:
-			nd = node_new(ps, ND_BREAK, 0);
+			nd = node_new(ps, ND_BREAK);
 			break;
 		case TK_CONTINUE:
-			nd = node_new(ps, ND_CONTINUE, 0);
+			nd = node_new(ps, ND_CONTINUE);
 			break;
 		default:
 			return parse_comma(ps);
@@ -481,7 +431,7 @@ static Node *parse_expr_stmt(ParseState *ps) {
 static Node *parse_block(ParseState *ps) {
 	// recursion here instead of using stack
 	char head[sizeof(Node) + sizeof(Node *) * 2];
-	Node *block = node_new(ps, ND_BLOCK, 2), *nd = (Node *)head;
+	Node *block = node_new(ps, ND_BLOCK), *nd = (Node *)head;
 	token_expect(ps, '{');
 	block->data = ps->scope;
 	while(!token_consume(ps, '}'))
@@ -492,7 +442,7 @@ static Node *parse_block(ParseState *ps) {
 
 static Node *parse_params(ParseState *ps) {
 	token_expect(ps, TK_TYPE);
-	Node *nd = node_new(ps, ND_PARAM, 1);
+	Node *nd = node_new(ps, ND_PARAM);
 	nd->data = var_new(ps);
 	token_expect(ps, TK_ID);
 	if(token_consume(ps, ','))
@@ -525,12 +475,12 @@ static Node *parse_fn(ParseState *ps, Node *nd) {
 }
 
 static Node *parse_declarator_list(ParseState *ps) {
-	Node *nd = node_new(ps, ND_VAR, 2);
+	Node *nd = node_new(ps, ND_VAR);
 	nd->data = var_new(ps);
 	define_var(ps->scope, nd->data, ++ps->scope->offset);
 	token_expect(ps, TK_ID);
 	if(token_equals(ps, '=')) {
-		nd = node_wrap(ps, ND_ASSIGN, 2, nd);
+		nd = node_wrap(ps, ND_ASSIGN, nd);
 		token_next(ps);
 		SECOND(nd) = parse_assign(ps);
 	} else if(token_consume(ps, '(')) {
@@ -540,7 +490,7 @@ static Node *parse_declarator_list(ParseState *ps) {
 		if(token_equals(ps, '{'))
 			return parse_fn(ps, nd);
 	}
-	nd = node_wrap(ps, ND_DECLARATION, 2, nd);
+	nd = node_wrap(ps, ND_DECLARATION, nd);
 	if(token_consume(ps, ','))
 		SECOND(nd) = parse_declarator_list(ps);
 	else
@@ -557,7 +507,7 @@ static Node *parse_declaration(ParseState *ps) {
 
 // TODO move wrapping to parse_block
 static Node *parse_stmt(ParseState *ps) {
-	Node *stmt = node_new(ps, ND_STMT, 2), *nd;
+	Node *stmt = node_new(ps, ND_STMT), *nd;
 	switch(ps->tk->kind) {
 		case ';':
 			token_next(ps);
@@ -568,7 +518,7 @@ static Node *parse_stmt(ParseState *ps) {
 			scope_exit(ps);
 			break;
 		case TK_IF:
-			nd = node_new(ps, ND_IF, 3);
+			nd = node_new(ps, ND_IF);
 			token_next(ps);
 			token_expect(ps, '(');
 			IF_COND(nd) = parse_expr(ps);
@@ -578,7 +528,7 @@ static Node *parse_stmt(ParseState *ps) {
 				IF_ELSE(nd) = parse_stmt(ps);
 			break;
 		case TK_FOR:
-			nd = node_new(ps, ND_FOR, 4);
+			nd = node_new(ps, ND_FOR);
 			token_next(ps);
 			token_expect(ps, '(');
 			if(!token_consume(ps, ';'))
@@ -592,7 +542,7 @@ static Node *parse_stmt(ParseState *ps) {
 			FOR_BODY(nd) = parse_stmt(ps);
 			break;
 		case TK_WHILE:
-			nd = node_new(ps, ND_WHILE, 4);
+			nd = node_new(ps, ND_WHILE);
 			token_next(ps);
 			token_expect(ps, '(');
 			WHILE_COND(nd) = parse_expr(ps);
@@ -600,7 +550,7 @@ static Node *parse_stmt(ParseState *ps) {
 			WHILE_BODY(nd) = parse_stmt(ps);
 			break;
 		case TK_DO:
-			nd = node_new(ps, ND_DO, 2);
+			nd = node_new(ps, ND_DO);
 			token_next(ps);
 			DO_BODY(nd) = parse_stmt(ps);
 			token_expect(ps, TK_WHILE);
@@ -609,20 +559,20 @@ static Node *parse_stmt(ParseState *ps) {
 			token_expect(ps, ')');
 			break;
 		case TK_GOTO:
-			nd = node_new(ps, ND_GOTO, 1);
+			nd = node_new(ps, ND_GOTO);
 			token_next(ps);
-			FIRST(nd) = node_new(ps, ND_LABEL, 0);
+			FIRST(nd) = node_new(ps, ND_LABEL);
 			token_expect(ps, TK_ID);
 			token_expect(ps, ';');
 			break;
 		case TK_RET:
-			nd = node_new(ps, ND_RET, 1);
+			nd = node_new(ps, ND_RET);
 			token_next(ps);
 			FIRST(nd) = parse_expr_stmt(ps);
 			break;
 		default:
 			if (ps->tk[1].kind == ':') {
-				nd = node_new(ps, ND_LABEL, 1);
+				nd = node_new(ps, ND_LABEL);
 				token_next(ps);
 				token_expect(ps, ':');
 				FIRST(nd) = parse_stmt(ps);
