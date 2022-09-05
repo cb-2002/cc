@@ -15,6 +15,7 @@ for /f "tokens=1,*" %%a in (..\test.tsv) do (
 	)
 )
 :exit
+echo done
 popd
 exit /b
 
