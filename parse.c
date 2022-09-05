@@ -1,3 +1,12 @@
+// parse state structure
+
+typedef struct ParseState ParseState;
+struct ParseState {
+	Token *tk;
+};
+
+// node structure
+
 enum NodeKind {
 #define x(a, b) a,
 #include "parse.inc"
@@ -5,65 +14,10 @@ enum NodeKind {
 };
 typedef enum NodeKind NodeKind;
 
-typedef struct Var Var;
-struct Var {
-	int offset;
-	Var *next;
-	Token *tk;
-};
-
-typedef struct Scope Scope;
-struct Scope {
-	Scope *parent;
-	Var *vars;
-	unsigned offset;
-};
-
-static Scope *scope_new(unsigned offset) {
-	Scope *scope = malloc(sizeof(scope));
-	scope->parent = NULL;
-	scope->vars = NULL;
-	scope->offset = offset;
-	return scope;
-}
-
 typedef struct Node Node;
-typedef struct ParseState ParseState;
-struct ParseState {
-	Token *tk;
-	Scope *scope;
-	List vars, fns;
-	Node *nodes;
-};
-
-static Var *var_new(ParseState *ps) {
-	Var *v = malloc(sizeof(Var));
-	v->tk = ps->tk;
-	return v;
-}
-
-static Var *var_find(ParseState *ps, Token *tk) {
-	for(Scope *scope = ps->scope; scope; scope = scope->parent)
-		for(Var *v = scope->vars; v; v = v->next)
-			if(token_cmp(v->tk, tk))
-				return v;
-	return NULL;
-}
-
-static void scope_enter(ParseState *ps) {
-	Scope *scope = scope_new(ps->scope->offset);
-	scope->parent = ps->scope;
-	ps->scope = scope;
-}
-
-static void scope_exit(ParseState *ps) {
-	ps->scope = ps->scope->parent;
-}
-
 struct Node {
 	NodeKind kind;
 	Token *tk;
-	void *data;
 	Node *children[];
 };
 
@@ -127,10 +81,14 @@ static unsigned node_depth(Node *nd) {
 	return nd ? 1 + node_depth(SECOND(nd)) : 0;
 }
 
-static unsigned get_stack_size(Node *nd) {
-	assert(nd->kind == ND_BLOCK);
-	return ((Scope *)nd->data)->offset;
-}
+// ast structure
+
+typedef struct Scope Scope;
+typedef struct Ast Ast;
+struct Ast {
+	Node **vars, **fns;
+	Scope *scopes;
+};
 
 // parsing functions
 
@@ -209,10 +167,6 @@ static Node *parse_atom(ParseState *ps) {
 			return nd;
 		case TK_ID:
 			nd = node_new(ps, ND_VAR);
-			Var *v = var_find(ps, nd->tk);
-			if(!v)
-				error_token(ps->tk, "unknown var\n");
-			nd->data = v;
 			break;
 		default:
 			error_token(ps->tk, "syntax\n");
@@ -433,7 +387,6 @@ static Node *parse_block(ParseState *ps) {
 	char head[sizeof(Node) + sizeof(Node *) * 2];
 	Node *block = node_new(ps, ND_BLOCK), *nd = (Node *)head;
 	token_expect(ps, '{');
-	block->data = ps->scope;
 	while(!token_consume(ps, '}'))
 		nd = SECOND(nd) = parse_stmt(ps);
 	FIRST(block) = SECOND((Node *)head);
@@ -443,7 +396,6 @@ static Node *parse_block(ParseState *ps) {
 static Node *parse_params(ParseState *ps) {
 	token_expect(ps, TK_TYPE);
 	Node *nd = node_new(ps, ND_PARAM);
-	nd->data = var_new(ps);
 	token_expect(ps, TK_ID);
 	if(token_consume(ps, ','))
 		FIRST(nd) = parse_params(ps);
@@ -452,32 +404,14 @@ static Node *parse_params(ParseState *ps) {
 	return nd;
 }
 
-static void define_var(Scope *scope, Var *v, int offset) {
-	v->offset = scope->parent ? offset : 0; // 0 used for globals
-	v->next = scope->vars;
-	scope->vars = v;
-}
-
-static void define_params(Scope *scope, Node *nd, int offset) {
-	if(!nd)
-		return;
-	define_var(scope, nd->data, --offset);
-	define_params(scope, FIRST(nd), offset);
-}
-
 static Node *parse_fn(ParseState *ps, Node *nd) {
 	assert(nd->kind == ND_FN);
-	scope_enter(ps);
-	define_params(ps->scope, FN_PARAMS(nd), -1);
 	FN_BODY(nd) = parse_block(ps);
-	scope_exit(ps);
 	return nd;
 }
 
 static Node *parse_declarator_list(ParseState *ps) {
 	Node *nd = node_new(ps, ND_VAR);
-	nd->data = var_new(ps);
-	define_var(ps->scope, nd->data, ++ps->scope->offset);
 	token_expect(ps, TK_ID);
 	if(token_equals(ps, '=')) {
 		nd = node_wrap(ps, ND_ASSIGN, nd);
@@ -511,11 +445,10 @@ static Node *parse_stmt(ParseState *ps) {
 	switch(ps->tk->kind) {
 		case ';':
 			token_next(ps);
-			return stmt;
+			free(stmt);
+			return NULL;
 		case '{':
-			scope_enter(ps);
 			nd = parse_block(ps);
-			scope_exit(ps);
 			break;
 		case TK_IF:
 			nd = node_new(ps, ND_IF);
@@ -557,6 +490,7 @@ static Node *parse_stmt(ParseState *ps) {
 			token_expect(ps, '(');
 			DO_COND(nd) = parse_expr(ps);
 			token_expect(ps, ')');
+			token_expect(ps, ';');
 			break;
 		case TK_GOTO:
 			nd = node_new(ps, ND_GOTO);
@@ -586,19 +520,17 @@ static Node *parse_stmt(ParseState *ps) {
 	return stmt;
 }
 
-static ParseState parse(Token *tokens) {
-	ParseState *ps = &(ParseState){
-		.tk = tokens,
-		.scope = scope_new(0),
-		.fns = list_new(),
-		.vars = list_new(),
-		.nodes = vec_new(1, sizeof(Node)),
-	};
-	Node *nd;
+static Ast *parse(Token *tokens) {
+	ParseState *ps = &(ParseState){ .tk = tokens, };
+	Ast *ast = malloc(sizeof(Ast));
+	ast->vars = vec_new(1, sizeof(Node *));
+	ast->fns = vec_new(1, sizeof(Node *));
 	while(ps->tk->kind != '\0') {
-		nd = parse_declaration(ps);
-		list_push_back(nd->kind == ND_FN ? &ps->fns : &ps->vars, nd);
+		Node *nd = parse_declaration(ps);
+		if (nd->kind == ND_FN)
+			vec_push_back(ast->fns, nd);
+		else
+			vec_push_back(ast->vars, nd);
 	}
-	assert(!ps->scope->parent);
-	return *ps;
+	return ast;
 }

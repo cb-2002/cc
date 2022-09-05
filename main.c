@@ -38,7 +38,7 @@ static char *read_file(char *name) {
 int main(int argc, char **argv) {
 	assert(argc == 2);
 	Token *tk = tokenize(argv[1]);
-	ParseState ps = parse(tk);
-	gen(&ps);
+	Ast *ast = parse(tk);
+	gen(ast);
 	return 0;
 }
