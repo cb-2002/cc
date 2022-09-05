@@ -47,25 +47,25 @@ struct Node {
 #define FN_PARAMS FIRST
 #define FN_BODY SECOND
 
-static unsigned node_children(NodeKind kind) {
+static unsigned node_size(NodeKind kind) {
 	switch (kind) {
-#define x(a, b) case a: return b;
+#define x(a, b) case a: return sizeof(Node) + sizeof(Node *) * b;
 #include "parse.inc"
 #undef x
 	}
 }
 
 static Node *node_new(ParseState *ps, NodeKind kind) {
-	unsigned size = sizeof(Node *) * node_children(kind);
-	Node *nd = malloc(sizeof(Node) + size);
+	unsigned size = node_size(kind);
+	Node *nd = malloc(size);
 	nd->kind = kind;
 	nd->tk = ps->tk;
-	memset(nd->children, 0, size);
+	memset(nd->children, 0, size - sizeof(Node));
 	return nd;
 }
 
 static Node *node_cpy(Node *nd) {
-	unsigned size = sizeof(Node) + sizeof(Node *) * node_children(nd->kind);
+	unsigned size = node_size(nd->kind);
 	Node *tmp = malloc(size);
 	memcpy(tmp, nd, size);
 	return tmp;
