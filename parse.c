@@ -162,9 +162,9 @@ static bool is_specifier(ParseState *ps) {
 
 typedef Node *ParseFn(ParseState *);
 
-ParseFn(parse_expr); 
-ParseFn(parse_assign);
-ParseFn(parse_stmt); 
+static ParseFn(parse_expr); 
+static ParseFn(parse_assign);
+static ParseFn(parse_stmt); 
 
 static Node *parse_binary_left(
 	ParseState *ps,

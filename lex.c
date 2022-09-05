@@ -127,7 +127,7 @@ static void error_at(char *file, char *pos, char *format, ...) {
 }
 
 #define error_token(tk, fmt, ...) \
-	error_at(tk->file, tk->pos, fmt, __VA_ARGS__)
+	error_at(tk->file, tk->pos, fmt, ##__VA_ARGS__)
 
 static bool is_int(char c) {
 	return '0' <= c && c <= '9';
