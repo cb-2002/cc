@@ -1,4 +1,4 @@
-// kind, #children
+// kind,	#children
 
 x(ND_UNKNOWN,	-1)
 x(ND_ADDR,	1)
@@ -42,7 +42,7 @@ x(ND_NEG,	1)
 x(ND_NOT,	1)
 x(ND_OR,	2)
 x(ND_OR_A,	2)
-x(ND_PARAM,	1)
+x(ND_PARAM,	4)
 x(ND_POST_DEC,	1)
 x(ND_POST_INC,	1)
 x(ND_PRE_DEC,	1)

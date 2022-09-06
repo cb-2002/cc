@@ -63,8 +63,8 @@ static Var *define_var(GenState *gs, Token *tk) {
 }
 
 static void define_params(GenState *gs, Node *nd) {
-	for (int offset = -1; nd; nd = FIRST(nd))
-		define_sym(gs, nd->tk, --offset);
+	for (int offset = -1; nd; nd = PARAM_NEXT(nd))
+		define_sym(gs, PARAM_VAR(nd)->tk, --offset);
 }
 
 // generation functions

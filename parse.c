@@ -46,6 +46,11 @@ struct Node {
 #define FN_PARAMS FORTH
 #define FN_BODY FITH
 
+#define PARAM_SPEC FIRST
+#define PARAM_TYPE SECOND
+#define PARAM_VAR THIRD
+#define PARAM_NEXT FORTH
+
 #define DECL_TYPE FIRST
 #define DECL_VAR SECOND
 #define DECL_NEXT THIRD
@@ -412,9 +417,10 @@ static Node *parse_type(void) {
 }
 
 static Node *parse_param(void) {
-	token_expect(TK_TYPE);
 	Node *nd = node_new(ND_PARAM);
-	token_expect(TK_ID);
+	PARAM_SPEC(nd) = parse_specifier();
+	PARAM_TYPE(nd) = parse_type();
+	PARAM_VAR(nd) = parse_var();
 	return nd;
 }
 
@@ -425,10 +431,10 @@ static Node *parse_params(void) {
 	if (token_consume(')'))
 		return NULL;
 	do
-		nd = FIRST(nd) = parse_param();
+		nd = PARAM_NEXT(nd) = parse_param();
 	while (token_consume(','));
 	token_expect(')');
-	return FIRST((Node *)head);
+	return PARAM_NEXT((Node *)head);
 }
 
 static Node *parse_fn(void) {
