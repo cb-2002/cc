@@ -86,15 +86,9 @@ struct Ast {
 
 // parsing functions
 
-static bool token_equals(TokenKind k) {
-	return tk->kind == k;
-}
-
 static bool token_consume(TokenKind k) {
-	if(!token_equals(k))
-		return false;
-	++tk;
-	return true;
+	return tk->kind == k ? ++tk, true :
+		false;
 }
 
 static void token_expect(TokenKind k) {
@@ -103,7 +97,7 @@ static void token_expect(TokenKind k) {
 }
 
 static bool is_specifier(void) {
-	return token_equals(TK_TYPE);
+	return tk->kind == TK_TYPE;
 }
 
 // recursive function declarations
@@ -330,7 +324,7 @@ static Node *parse_assign(void) {
 
 static Node *parse_ternary(void) {
 	Node *nd = parse_assign();
-	if(token_equals('?')) {
+	if(tk->kind == '?') {
 		nd = node_wrap(ND_IF, nd);
 		++tk;
 		IF_BODY(nd) = parse_expr();
@@ -406,7 +400,7 @@ static Node *parse_fn(Node *nd) {
 static Node *parse_declarator(void) {
 	Node *nd = node_new(ND_VAR);
 	token_expect(TK_ID);
-	if (token_equals('=')) {
+	if (tk->kind == '=') {
 		nd = node_wrap(ND_ASSIGN, nd);
 		++tk;
 		SECOND(nd) = parse_assign();
@@ -414,7 +408,7 @@ static Node *parse_declarator(void) {
 		nd->kind = ND_FN;
 		if (!token_consume(')'))
 			FN_PARAMS(nd) = parse_params();
-		if (token_equals('{'))
+		if (tk->kind == '{')
 			return parse_fn(nd);
 	}
 	return node_wrap(ND_DECLARATION, nd);
