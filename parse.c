@@ -174,14 +174,20 @@ static Node *parse_atom(ParseState *ps) {
 	return nd;
 }
 
-static Node *parse_args(ParseState *ps) {
+static Node *parse_arg(ParseState *ps) {
 	Node *nd = node_new(ps, ND_ARG);
 	FIRST(nd) = parse_assign(ps);
-	if(token_consume(ps, ','))
-		SECOND(nd) = parse_args(ps);
-	else
-		token_expect(ps, ')');
 	return nd;
+}
+
+static Node *parse_args(ParseState *ps) {
+	char head[node_size(ND_ARG)];
+	Node *nd = (Node *)head;
+	do
+		nd = SECOND(nd) = parse_arg(ps);
+	while (token_consume(ps, ','));
+	token_expect(ps, ')');
+	return SECOND((Node *)head);
 }
 
 static Node *parse_postfix(ParseState *ps) {

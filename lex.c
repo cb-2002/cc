@@ -104,7 +104,7 @@ static bool token_cmp(Token *tk, Token *TK) {
 }
 
 static char *line_start(char *pos) {
-	while (*pos && *pos != '\n')
+	while (pos[-2] && pos[-1] != '\n')
 		--pos;
 	return pos;
 }
