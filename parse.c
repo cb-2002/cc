@@ -366,20 +366,20 @@ static Node *parse_comma(void) {
 }
 
 static Node *parse_expr(void) {
-	// TODO use get_node_kind table here
+	NodeKind get_node_kind[TK_COUNT] = {
+		[TK_BREAK] = ND_BREAK,
+		[TK_CONTINUE] = ND_CONTINUE,
+	};
 	Node *nd;
-	switch(tk->kind) {
-		case TK_BREAK:
-			nd = node_new(ND_BREAK);
-			break;
-		case TK_CONTINUE:
-			nd = node_new(ND_CONTINUE);
-			break;
-		default:
+	NodeKind kind = get_node_kind[tk->kind];
+	switch(kind) {
+		case 0:
 			return parse_comma();
+		default:
+			nd = node_new(kind);
+			++tk;
+			return nd;
 	}
-	++tk;
-	return nd;
 }
 
 static Node *parse_expr_stmt(void) {
