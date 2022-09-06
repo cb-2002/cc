@@ -87,7 +87,6 @@ typedef struct Scope Scope;
 typedef struct Ast Ast;
 struct Ast {
 	Node **vars, **fns;
-	Scope *scopes;
 };
 
 // parsing functions
