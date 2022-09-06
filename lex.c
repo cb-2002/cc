@@ -115,6 +115,15 @@ static char *line_end(char *pos) {
 	return pos;
 }
 
+static unsigned line_offset(char *start, char *pos) {
+	unsigned col;
+	for (char *s = start; s < pos; ++s) {
+		col += *s == '\t' ? 8 - col % 8
+			: 1;
+	}
+	return col;
+}
+
 __declspec(noreturn)
 static void error_at(char *file, char *pos, char *format, ...) {
 	va_list args;
@@ -122,8 +131,8 @@ static void error_at(char *file, char *pos, char *format, ...) {
 	vprintf(format, args);
 	va_end(args);
 	char *start = line_start(pos);
-	unsigned len = line_end(pos) - start;
-	error("in %s\n%.*s\n%*s^\n", file, len, start, (int)(pos - start), "");
+	unsigned len = line_end(pos) - start, offset = line_offset(start, pos);
+	error("in %s\n%.*s\n%*s^\n", file, len, start, offset, "");
 }
 
 #define error_token(tk, fmt, ...) \
