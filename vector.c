@@ -37,7 +37,7 @@ static void *vec_maybe_grow(void *v) {
 	((v) = vec_maybe_grow(v), (v)[vec_len(v)] = (x), (v) + vec_len(v)++)
 
 #define vec_begin(v) \
-	((v)[0])
+	((v))
 
 #define vec_back(v) \
-	((v)[vec_len(v) - 1])
+	((v) + vec_len(v) - 1)

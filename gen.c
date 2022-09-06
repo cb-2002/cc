@@ -55,7 +55,7 @@ static Var *define_sym(GenState *gs, Token *tk, int offset) {
 		.offset = offset
 	};
 	vec_push_back(gs->scope->vars, v);
-	return &vec_back(gs->scope->vars);
+	return vec_back(gs->scope->vars);
 }
 
 static Var *define_var(GenState *gs, Token *tk) {
