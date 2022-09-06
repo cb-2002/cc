@@ -375,7 +375,7 @@ static void gen_node(GenState *gs, Node *nd) {
 		case ND_FN:
 			scope_enter(gs);
 			define_params(gs, FN_PARAMS(nd));
-			print_token(nd->tk);
+			print_token(FN_VAR(nd)->tk);
 			printf(":\n");
 			printf("push rbp\n");
 			printf("mov rbp, rsp\n");
@@ -459,7 +459,7 @@ static void gen(Ast *ast) {
 				// function prototype
 				case ND_FN:
 					printf("extern ");
-					print_token(nd->tk);
+					print_token(FN_VAR(nd)->tk);
 					printf("\n");
 					break;
 				default:

@@ -20,6 +20,7 @@ struct Node {
 #define SECOND(nd) ((nd)->children[1])
 #define THIRD(nd) ((nd)->children[2])
 #define FORTH(nd) ((nd)->children[3])
+#define FITH(nd) ((nd)->children[4])
 
 #define LEFT FIRST
 #define RIGHT SECOND
@@ -39,8 +40,11 @@ struct Node {
 #define DO_BODY FIRST
 #define DO_COND SECOND
 
-#define FN_PARAMS FIRST
-#define FN_BODY SECOND
+#define FN_SPEC FIRST
+#define FN_TYPE SECOND
+#define FN_VAR THIRD
+#define FN_PARAMS FORTH
+#define FN_BODY FITH
 
 #define DECL_TYPE FIRST
 #define DECL_VAR SECOND
@@ -104,6 +108,17 @@ static bool is_specifier(void) {
 	return tk->kind == TK_TYPE;
 }
 
+// huristic for difference between definition and declaration
+// TODO does this work with structs?
+static bool is_fn(void) {
+	for (Token *tmp = tk; tmp->kind != '\0'; ++tmp)
+		if (tmp->kind == ';')
+			return false;
+		else if (tmp->kind == ')' && tmp[1].kind == '{')
+			return true;
+	return false;
+}
+
 // recursive function declarations
 
 typedef Node *ParseFn(void);
@@ -134,6 +149,12 @@ static Node *parse_binary_right(NodeKind get_node_kind[TK_COUNT], ParseFn *parse
 	return nd;
 }
 
+static Node *parse_var(void) {
+	Node *nd = node_new(ND_VAR);
+	token_expect(TK_ID);
+	return nd;
+}
+
 static Node *parse_atom(void) {
 	Node *nd;
 	switch(tk->kind) {
@@ -146,8 +167,7 @@ static Node *parse_atom(void) {
 			token_expect(')');
 			return nd;
 		case TK_ID:
-			nd = node_new(ND_VAR);
-			break;
+			return parse_var();
 		default:
 			error_token(tk, "syntax\n");
 	}
@@ -378,6 +398,19 @@ static Node *parse_block(void) {
 	return block;
 }
 
+static Node *parse_specifier(void) {
+	// TODO types
+	// for now everything is an int
+	Node *nd = node_new(ND_SPECIFIER);
+	token_expect(TK_TYPE);
+	return nd;
+}
+
+static Node *parse_type(void) {
+	return token_consume('*') ? node_new(ND_PTR)
+		: NULL;
+}
+
 static Node *parse_param(void) {
 	token_expect(TK_TYPE);
 	Node *nd = node_new(ND_PARAM);
@@ -388,6 +421,9 @@ static Node *parse_param(void) {
 static Node *parse_params(void) {
 	char head[node_size(ND_PARAM)];
 	Node *nd = (Node *)head;
+	token_expect('(');
+	if (token_consume(')'))
+		return NULL;
 	do
 		nd = FIRST(nd) = parse_param();
 	while (token_consume(','));
@@ -395,32 +431,25 @@ static Node *parse_params(void) {
 	return FIRST((Node *)head);
 }
 
-static Node *parse_fn(Node *nd) {
-	assert(nd->kind == ND_FN);
-	FN_BODY(nd) = parse_block();
+static Node *parse_fn(void) {
+	Node *nd = node_new(ND_FN);
+	FN_SPEC(nd) = parse_specifier();
+	FN_TYPE(nd) = parse_type();
+	FN_VAR(nd) = parse_var();
+	FN_PARAMS(nd) = parse_params();
+	if (!token_consume(';'))
+		FN_BODY(nd) = parse_block();
 	return nd;
 }
 
 static Node *parse_init_declarator(void) {
-	Node *nd = node_new(ND_VAR);
-	token_expect(TK_ID);
+	Node *nd = parse_var();
 	if (tk->kind == '=') {
 		nd = node_wrap(ND_ASSIGN, nd);
 		++tk;
 		SECOND(nd) = parse_assign();
-	} else if (token_consume('(')) {
-		nd->kind = ND_FN;
-		if (!token_consume(')'))
-			FN_PARAMS(nd) = parse_params();
-		if (tk->kind == '{')
-			return parse_fn(nd);
 	}
 	return nd;
-}
-
-static Node *parse_type(void) {
-	return token_consume('*') ? node_new(ND_PTR)
-		: NULL;
 }
 
 static Node *parse_declarator(void) {
@@ -442,20 +471,16 @@ static Node *parse_declarators(void) {
 	return DECL_NEXT((Node *)head);
 }
 
-static Node *parse_specifier(void) {
-	// TODO types
-	// for now everything is an int
-	Node *nd = node_new(ND_SPECIFIER);
-	token_expect(TK_TYPE);
-	return nd;
-}
-
 static Node *parse_declaration(void) {
 	Node *nd = node_new(ND_DECLARATION);
 	FIRST(nd) = parse_specifier();
 	SECOND(nd) = parse_declarators();
 	return SECOND(nd)->kind == ND_FN ? SECOND(nd)
 		: nd;
+}
+
+static Node *parse_unit(void) {
+	return (is_fn() ? parse_fn : parse_declaration)();
 }
 
 static Node *parse_stmt(void) {
@@ -542,7 +567,7 @@ static Ast *parse(Token *tokens) {
 	ast->vars = vec_new(1, sizeof(Node *));
 	ast->fns = vec_new(1, sizeof(Node *));
 	while(tk->kind != '\0') {
-		Node *nd = parse_declaration();
+		Node *nd = parse_unit();
 		if (nd->kind == ND_FN)
 			vec_push_back(ast->fns, nd);
 		else
