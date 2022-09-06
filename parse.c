@@ -451,13 +451,11 @@ static Node *parse_declaration(ParseState *ps) {
 	return SECOND((Node *)head);
 }
 
-// TODO move wrapping to parse_block
 static Node *parse_stmt(ParseState *ps) {
-	Node *stmt = node_new(ps, ND_STMT), *nd;
+	Node *nd;
 	switch(ps->tk->kind) {
 		case ';':
 			token_next(ps);
-			free(stmt);
 			return NULL;
 		case '{':
 			nd = parse_block(ps);
@@ -528,8 +526,7 @@ static Node *parse_stmt(ParseState *ps) {
 				nd = parse_expr_stmt(ps);
 			break;
 	}
-	FIRST(stmt) = nd;
-	return stmt;
+	return node_wrap(ps, ND_STMT, nd);
 }
 
 static Ast *parse(Token *tokens) {
