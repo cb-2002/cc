@@ -411,21 +411,34 @@ static Node *parse_declarator(void) {
 		if (tk->kind == '{')
 			return parse_fn(nd);
 	}
-	return node_wrap(ND_DECLARATION, nd);
+	return node_wrap(ND_DECLARATOR, nd);
 }
 
-static Node *parse_declaration(void) {
-	char head[node_size(ND_DECLARATION)];
+static Node *parse_declarators(void) {
+	char head[node_size(ND_DECLARATOR)];
 	Node *nd = (Node *)head;
-	// TODO types
-	// for now everything is an int
-	token_expect(TK_TYPE);
 	do
 		nd = SECOND(nd) = parse_declarator();
 	while (token_consume(','));
 	if (nd->kind != ND_FN)
 		token_expect(';');
 	return SECOND((Node *)head);
+}
+
+static Node *parse_specifier(void) {
+	// TODO types
+	// for now everything is an int
+	Node *nd = node_new(ND_SPECIFIER);
+	token_expect(TK_TYPE);
+	return nd;
+}
+
+static Node *parse_declaration(void) {
+	Node *nd = node_new(ND_DECLARATION);
+	FIRST(nd) = parse_specifier();
+	SECOND(nd) = parse_declarators();
+	return SECOND(nd)->kind == ND_FN ? SECOND(nd)
+		: nd;
 }
 
 static Node *parse_stmt(void) {

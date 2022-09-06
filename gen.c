@@ -286,7 +286,7 @@ static void gen_node(GenState *gs, Node *nd) {
 			gen_node(gs, FIRST(nd));
 			gen_node(gs, SECOND(nd));
 			return;
-		case ND_DECLARATION:
+		case ND_DECLARATOR:
 			gs->decl = true;
 			gen_node(gs, FIRST(nd));
 			gen_node(gs, SECOND(nd));
@@ -420,6 +420,9 @@ static void gen_node(GenState *gs, Node *nd) {
 			printf("dec DWORD [rax]\n");
 			printf("mov rax, [rax]\n");
 			return;
+		case ND_DECLARATION:
+			gen_node(gs, SECOND(nd));
+			return;
 		default:
 			error_token(nd->tk, "unknown node type\n");
 	}
@@ -435,8 +438,8 @@ static void gen(Ast *ast) {
 	printf("global main\n");
 	printf("section .data\n");
 	for (int i = 0; i < vec_len(ast->vars); ++i) {
-		for(Node *decl = ast->vars[i]; decl; decl = SECOND(decl)) {
-			assert(decl->kind = ND_DECLARATION);
+		for(Node *decl = SECOND(ast->vars[i]); decl; decl = SECOND(decl)) {
+			assert(decl->kind == ND_DECLARATOR);
 			Node *nd = FIRST(decl);
 			switch(nd->kind) {
 				case ND_VAR:
