@@ -456,8 +456,7 @@ static Node *parse_declarator(void) {
 	Node *nd = node_new(ND_DECLARATOR);
 	DECL_TYPE(nd) = parse_type();
 	DECL_VAR(nd) = parse_init_declarator();
-	return DECL_VAR(nd)->kind == ND_FN ? DECL_VAR(nd)
-		: nd;
+	return nd;
 }
 
 static Node *parse_declarators(void) {
