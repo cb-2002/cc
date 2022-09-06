@@ -388,8 +388,7 @@ static Node *parse_expr_stmt(ParseState *ps) {
 }
 
 static Node *parse_block(ParseState *ps) {
-	// recursion here instead of using stack
-	char head[sizeof(Node) + sizeof(Node *) * 2];
+	char head[node_size(ND_BLOCK)];
 	Node *block = node_new(ps, ND_BLOCK), *nd = (Node *)head;
 	token_expect(ps, '{');
 	while(!token_consume(ps, '}'))
@@ -398,15 +397,21 @@ static Node *parse_block(ParseState *ps) {
 	return block;
 }
 
-static Node *parse_params(ParseState *ps) {
+static Node *parse_param(ParseState *ps) {
 	token_expect(ps, TK_TYPE);
 	Node *nd = node_new(ps, ND_PARAM);
 	token_expect(ps, TK_ID);
-	if(token_consume(ps, ','))
-		FIRST(nd) = parse_params(ps);
-	else
-		token_expect(ps, ')');
 	return nd;
+}
+
+static Node *parse_params(ParseState *ps) {
+	char head[node_size(ND_PARAM)];
+	Node *nd = (Node *)head;
+	do
+		nd = FIRST(nd) = parse_param(ps);
+	while (token_consume(ps, ','));
+	token_expect(ps, ')');
+	return FIRST((Node *)head);
 }
 
 static Node *parse_fn(ParseState *ps, Node *nd) {
@@ -415,33 +420,35 @@ static Node *parse_fn(ParseState *ps, Node *nd) {
 	return nd;
 }
 
-static Node *parse_declarator_list(ParseState *ps) {
+static Node *parse_declarator(ParseState *ps) {
 	Node *nd = node_new(ps, ND_VAR);
 	token_expect(ps, TK_ID);
-	if(token_equals(ps, '=')) {
+	if (token_equals(ps, '=')) {
 		nd = node_wrap(ps, ND_ASSIGN, nd);
 		token_next(ps);
 		SECOND(nd) = parse_assign(ps);
-	} else if(token_consume(ps, '(')) {
+	} else if (token_consume(ps, '(')) {
 		nd->kind = ND_FN;
-		if(!token_consume(ps, ')'))
+		if (!token_consume(ps ,')'))
 			FN_PARAMS(nd) = parse_params(ps);
-		if(token_equals(ps, '{'))
+		if (token_equals(ps, '{'))
 			return parse_fn(ps, nd);
 	}
-	nd = node_wrap(ps, ND_DECLARATION, nd);
-	if(token_consume(ps, ','))
-		SECOND(nd) = parse_declarator_list(ps);
-	else
-		token_expect(ps, ';');
-	return nd;
+	return node_wrap(ps, ND_DECLARATION, nd);
 }
 
 static Node *parse_declaration(ParseState *ps) {
+	char head[node_size(ND_DECLARATION)];
+	Node *nd = (Node *)head;
 	// TODO types
 	// for now everything is an int
 	token_expect(ps, TK_TYPE);
-	return parse_declarator_list(ps);
+	do
+		nd = SECOND(nd) = parse_declarator(ps);
+	while (token_consume(ps, ','));
+	if (nd->kind != ND_FN)
+		token_expect(ps, ';');
+	return SECOND((Node *)head);
 }
 
 // TODO move wrapping to parse_block
