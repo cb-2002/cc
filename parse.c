@@ -42,6 +42,10 @@ struct Node {
 #define FN_PARAMS FIRST
 #define FN_BODY SECOND
 
+#define DECL_TYPE FIRST
+#define DECL_VAR SECOND
+#define DECL_NEXT THIRD
+
 static unsigned node_size(NodeKind kind) {
 	switch (kind) {
 #define x(a, b) case a: return sizeof(Node) + sizeof(Node *) * b;
@@ -397,7 +401,7 @@ static Node *parse_fn(Node *nd) {
 	return nd;
 }
 
-static Node *parse_declarator(void) {
+static Node *parse_init_declarator(void) {
 	Node *nd = node_new(ND_VAR);
 	token_expect(TK_ID);
 	if (tk->kind == '=') {
@@ -411,18 +415,31 @@ static Node *parse_declarator(void) {
 		if (tk->kind == '{')
 			return parse_fn(nd);
 	}
-	return node_wrap(ND_DECLARATOR, nd);
+	return nd;
+}
+
+static Node *parse_type(void) {
+	return token_consume('*') ? node_new(ND_PTR)
+		: NULL;
+}
+
+static Node *parse_declarator(void) {
+	Node *nd = node_new(ND_DECLARATOR);
+	DECL_TYPE(nd) = parse_type();
+	DECL_VAR(nd) = parse_init_declarator();
+	return DECL_VAR(nd)->kind == ND_FN ? DECL_VAR(nd)
+		: nd;
 }
 
 static Node *parse_declarators(void) {
 	char head[node_size(ND_DECLARATOR)];
 	Node *nd = (Node *)head;
 	do
-		nd = SECOND(nd) = parse_declarator();
+		nd = DECL_NEXT(nd) = parse_declarator();
 	while (token_consume(','));
 	if (nd->kind != ND_FN)
 		token_expect(';');
-	return SECOND((Node *)head);
+	return DECL_NEXT((Node *)head);
 }
 
 static Node *parse_specifier(void) {

@@ -288,8 +288,8 @@ static void gen_node(GenState *gs, Node *nd) {
 			return;
 		case ND_DECLARATOR:
 			gs->decl = true;
-			gen_node(gs, FIRST(nd));
-			gen_node(gs, SECOND(nd));
+			gen_node(gs, DECL_VAR(nd));
+			gen_node(gs, DECL_NEXT(nd));
 			gs->decl = false;
 			return;
 		case ND_ASSIGN:
@@ -438,9 +438,9 @@ static void gen(Ast *ast) {
 	printf("global main\n");
 	printf("section .data\n");
 	for (int i = 0; i < vec_len(ast->vars); ++i) {
-		for(Node *decl = SECOND(ast->vars[i]); decl; decl = SECOND(decl)) {
+		for(Node *decl = SECOND(ast->vars[i]); decl; decl = DECL_NEXT(decl)) {
 			assert(decl->kind == ND_DECLARATOR);
-			Node *nd = FIRST(decl);
+			Node *nd = DECL_VAR(decl);
 			switch(nd->kind) {
 				case ND_VAR:
 					define_sym(gs, nd->tk, 0);

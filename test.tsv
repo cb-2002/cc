@@ -1,4 +1,5 @@
-0	int main(){return 0;}
+0 int main(){int *x;return 0;}
+break 0	int main(){return 0;}
 11	int main(){return 11;}
 24	int main(){return 2+22;}
 10	int main(){return  3 + 7 ;}
