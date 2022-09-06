@@ -10,13 +10,14 @@ for /f "tokens=1,*" %%a in (..\test.tsv) do (
 		cc.exe tmp.c > tmp.asm || goto :compile_error
 		nasm -f win64 tmp.asm -o tmp.obj || goto :compile_error
 		link /nologo /entry:main /out:tmp.exe tmp.obj || goto :exit
-		tmp.exe
-		if not errorlevel == %%a goto :run_error
+		call :test
 	)
 )
-:exit
-echo done
-popd
+goto :exit
+
+:test
+tmp.exe
+if not %errorlevel% == %expected% goto :run_error
 exit /b
 
 :compile_error
@@ -30,3 +31,7 @@ nasm -g -F cv8 -f win64 tmp.asm -o tmp.obj
 link /pdb:tmp.pdf /debug /nologo /entry:main /out:tmp.exe tmp.obj 
 popd
 goto :exit
+
+:exit
+echo done
+popd
