@@ -127,10 +127,10 @@ static ParseFn(parse_expr);
 static ParseFn(parse_assign);
 static ParseFn(parse_stmt); 
 
-static Node *parse_binary_left(NodeKind get_node_kind[TK_COUNT], ParseFn *parse_child) {
+static Node *parse_binary_left(NodeKind table[TK_COUNT], ParseFn *parse_child) {
 	Node *nd = parse_child();
 	NodeKind kind;
-	while(kind = get_node_kind[tk->kind]) {
+	while(kind = table[tk->kind]) {
 		nd = node_wrap(kind, nd);
 		++tk;
 		SECOND(nd) = parse_child();
@@ -138,13 +138,13 @@ static Node *parse_binary_left(NodeKind get_node_kind[TK_COUNT], ParseFn *parse_
 	return nd;
 }
 
-static Node *parse_binary_right(NodeKind get_node_kind[TK_COUNT], ParseFn *parse_child) {
+static Node *parse_binary_right(NodeKind table[TK_COUNT], ParseFn *parse_child) {
 	Node *nd = parse_child();
-	NodeKind kind = get_node_kind[tk->kind];
+	NodeKind kind = table[tk->kind];
 	if(kind) {
 		nd = node_wrap(kind, nd);
 		++tk;
-		SECOND(nd) = parse_binary_right(get_node_kind, parse_child);
+		SECOND(nd) = parse_binary_right(table, parse_child);
 	}
 	return nd;
 }
@@ -192,13 +192,13 @@ static Node *parse_args(void) {
 }
 
 static Node *parse_postfix(void) {
-	NodeKind get_node_kind[TK_COUNT] = {
+	NodeKind table[TK_COUNT] = {
 		['('] = ND_CALL,
 		[TK_INC] = ND_POST_INC,
 		[TK_DEC] = ND_POST_DEC,
 	};
 	Node *nd = parse_atom();
-	NodeKind kind = get_node_kind[tk->kind];
+	NodeKind kind = table[tk->kind];
 	switch(kind) {
 		case 0:
 			return nd;
@@ -216,7 +216,7 @@ static Node *parse_postfix(void) {
 }
 
 static Node *parse_prefix(void) {
-	NodeKind get_node_kind[TK_COUNT]  = {
+	NodeKind table[TK_COUNT]  = {
 		['!'] = ND_LNOT,
 		['&'] = ND_ADDR,
 		['*'] = ND_DEREF,
@@ -226,7 +226,7 @@ static Node *parse_prefix(void) {
 		[TK_INC] = ND_PRE_INC,
 	};
 	token_consume('+'); // ignoring unary + as it does nothing
-	NodeKind kind = get_node_kind[tk->kind];
+	NodeKind kind = table[tk->kind];
 	if(kind) {
 		Node *nd = node_new(kind);
 		++tk;
@@ -366,12 +366,12 @@ static Node *parse_comma(void) {
 }
 
 static Node *parse_expr(void) {
-	NodeKind get_node_kind[TK_COUNT] = {
+	NodeKind table[TK_COUNT] = {
 		[TK_BREAK] = ND_BREAK,
 		[TK_CONTINUE] = ND_CONTINUE,
 	};
 	Node *nd;
-	NodeKind kind = get_node_kind[tk->kind];
+	NodeKind kind = table[tk->kind];
 	switch(kind) {
 		case 0:
 			return parse_comma();
