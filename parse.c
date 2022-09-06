@@ -144,7 +144,7 @@ static Node *parse_binary_right(NodeKind get_node_kind[TK_COUNT], ParseFn *parse
 	if(kind) {
 		nd = node_wrap(kind, nd);
 		++tk;
-		SECOND(nd) = parse_binary_left(get_node_kind, parse_child);
+		SECOND(nd) = parse_binary_right(get_node_kind, parse_child);
 	}
 	return nd;
 }
