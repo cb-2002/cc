@@ -104,7 +104,7 @@ static bool token_cmp(Token *tk, Token *TK) {
 }
 
 static char *line_start(char *pos) {
-	while (pos[-2] && pos[-1] != '\n')
+	while (pos[-1] && pos[-1] != '\n')
 		--pos;
 	return pos;
 }
@@ -273,10 +273,8 @@ static TokenKind scan(TokenState *ts) {
 		case '}':
 		case '~':
 		case '#':
-			if (ts->pos[-1])
-				return ts->pos[0];
-			++ts->pos;
-			return scan_directive(ts);
+			return ts->pos[-1] ? ts->pos[0]
+				: scan_directive(ts);
 		// double character operators
 		case '%':
 			switch (ts->pos[1]) {

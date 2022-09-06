@@ -24,7 +24,8 @@ static char *read_file(char *name) {
 		++len;
 	rewind(f);
 #endif
-	char *buf = malloc(len);
+	char *buf = malloc(len + 1);
+	*buf++ = '\0';
 	fread(buf, 1, len, f);
 	assert(buf[len - 1] == '\n');
 	buf[len - 1] = '\0';
