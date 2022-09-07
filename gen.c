@@ -1,3 +1,5 @@
+static unsigned count = 0, loop_label = 0;
+
 // generation structures
 
 typedef struct Var Var;
@@ -101,8 +103,61 @@ static void gen_addr(GenState *gs, Node *nd) {
 	}
 }
 
+static void gen_binary(GenState *gs, Node *nd, char *s) {
+	gen_node(gs, RIGHT(nd));
+	printf("push rax\n");
+	gen_node(gs, LEFT(nd));
+	printf("pop rcx\n");
+	printf("%s rax, rcx\n", s);
+}
+
+static void gen_div(GenState *gs, Node *nd) {
+	gen_node(gs, RIGHT(nd));
+	printf("push rax\n");
+	gen_node(gs, FIRST(nd));
+	printf("pop rcx\n");
+	printf("cqo\n");
+	printf("idiv rcx\n");
+}
+
+static void gen_cond(GenState *gs, Node *nd, char *s) {
+	gen_binary(gs, nd, "cmp");
+	printf("%s al\n", s);
+}
+
+static void gen_postfix(GenState *gs, Node *nd, char *s) {
+	gen_addr(gs, FIRST(nd));
+	printf("mov rcx, [rax]\n");
+	printf("%s DWORD [rax]\n", s);
+	printf("mov rax, rcx\n");
+}
+
+static void gen_prefix(GenState *gs, Node *nd, char *s) {
+	gen_addr(gs, FIRST(nd));
+	printf("%s DWORD [rax]\n", s);
+	printf("mov rax, [rax]\n");
+}
+
+static void gen_logical(GenState *gs, Node *nd, char *s) {
+	unsigned x = count++;
+	gen_node(gs, FIRST(nd));
+	printf("cmp rax, 0\n");
+	printf("%s .false%d\n", s, x);
+	gen_node(gs, RIGHT(nd));
+	printf("cmp rax, 0\n");
+	printf(".false%d:\n", x);
+	printf("setne al\n");
+}
+
+static void gen_shift(GenState *gs, Node *nd, char *s) {
+	gen_node(gs, RIGHT(nd));
+	printf("push rax\n");
+	gen_node(gs, FIRST(nd));
+	printf("pop rcx\n");
+	printf("%s rax, cl\n", s);
+}
+
 static void gen_node(GenState *gs, Node *nd) {
-	static unsigned count = 0, loop_label = 0;
 	if(!nd)
 		return;
 	printf("; ");
@@ -115,65 +170,29 @@ static void gen_node(GenState *gs, Node *nd) {
 			printf("\n");
 			return;
 		case ND_ADD:
-			gen_node(gs, SECOND(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("add rax, rcx\n");
+			gen_binary(gs, nd, "add");
 			return;
 		case ND_SUB:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("sub rax, rcx\n");
+			gen_binary(gs, nd, "sub");
 			return;
 		case ND_MUL:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("imul rax, rcx\n");
+			gen_binary(gs, nd, "imul");
 			return;
 		case ND_DIV:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("cqo\n");
-			printf("idiv rcx\n");
-			printf("\n");
+			gen_div(gs, nd);
 			return;
 		case ND_MOD:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("cqo\n");
-			printf("idiv rcx\n");
+			gen_div(gs, nd);
 			printf("mov rax, rdx\n");
-			printf("\n");
 			return;
 		case ND_AND:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("and rax, rcx\n");
+			gen_binary(gs, nd, "and");
 			return;
 		case ND_XOR:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("xor rax, rcx\n");
+			gen_binary(gs, nd, "xor");
 			return;
 		case ND_OR:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("or rax, rcx\n");
+			gen_binary(gs, nd, "or");
 			return;
 		case ND_NEG:
 			gen_node(gs, FIRST(nd));
@@ -190,75 +209,29 @@ static void gen_node(GenState *gs, Node *nd) {
 			printf("sete al\n");
 			return;
 		case ND_LT:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("cmp rax, rcx\n");
-			printf("setl al\n");
+			gen_cond(gs, nd, "setl");
 			return;
 		case ND_GT:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("cmp rax, rcx\n");
-			printf("setg al\n");
+			gen_cond(gs, nd, "setg");
 			return;
 		case ND_SHL:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("shl rax, cl\n");
+			gen_shift(gs, nd, "shl");
 			return;
 		case ND_SHR:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("shr rax, cl\n");
+			gen_shift(gs, nd, "shr");
 			return;
 		case ND_EQ:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("cmp rax, rcx\n");
-			printf("sete al\n");
+			gen_cond(gs, nd, "sete");
 			return;
 		case ND_NE:
-			gen_node(gs, RIGHT(nd));
-			printf("push rax\n");
-			gen_node(gs, FIRST(nd));
-			printf("pop rcx\n");
-			printf("cmp rax, rcx\n");
-			printf("setne al\n");
+			gen_cond(gs, nd, "setne");
 			return;
 		case ND_LAND:
-		{
-			unsigned x = count++;
-			gen_node(gs, FIRST(nd));
-			printf("cmp rax, 0\n");
-			printf("je .false%d\n", x);
-			gen_node(gs, RIGHT(nd));
-			printf("cmp rax, 0\n");
-			printf(".false%d:\n", x);
-			printf("setne al\n");
+			gen_logical(gs, nd, "je");
 			return;
-		}
 		case ND_LOR:
-		{
-			unsigned x = count++;
-			gen_node(gs, FIRST(nd));
-			printf("cmp rax, 0\n");
-			printf("jne .false%d\n", x);
-			gen_node(gs, SECOND(nd));
-			printf("cmp rax, 0\n");
-			printf(".false%d:\n", x);
-			printf("setne al\n");
+			gen_logical(gs, nd, "jne");
 			return;
-		}
 		case ND_IF:
 		case ND_TERNARY:
 		{
@@ -399,26 +372,16 @@ static void gen_node(GenState *gs, Node *nd) {
 			printf("push rax\n");
 			return;
 		case ND_POST_INC:
-			gen_addr(gs, FIRST(nd));
-			printf("mov rcx, [rax]\n");
-			printf("inc DWORD [rax]\n");
-			printf("mov rax, rcx\n");
+			gen_postfix(gs, nd, "inc");
 			return;
 		case ND_POST_DEC:
-			gen_addr(gs, FIRST(nd));
-			printf("mov rcx, [rax]\n");
-			printf("dec DWORD [rax]\n");
-			printf("mov rax, rcx\n");
+			gen_postfix(gs, nd, "dec");
 			return;
 		case ND_PRE_INC:
-			gen_addr(gs, FIRST(nd));
-			printf("inc DWORD [rax]\n");
-			printf("mov rax, [rax]\n");
+			gen_prefix(gs, nd, "inc");
 			return;
 		case ND_PRE_DEC:
-			gen_addr(gs, FIRST(nd));
-			printf("dec DWORD [rax]\n");
-			printf("mov rax, [rax]\n");
+			gen_prefix(gs, nd, "dec");
 			return;
 		case ND_DECLARATION:
 			gen_node(gs, SECOND(nd));
