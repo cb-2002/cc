@@ -115,8 +115,7 @@ static void gen_declarator_global(GenState *gs, Node *spec, Node *ptr, Node *var
 			printf("\n");
 			break;
 		default:
-			// TODO abort
-			error_node(var, "unknown node type\n");
+			quit();
 	}
 }
 

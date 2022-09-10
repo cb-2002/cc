@@ -8,7 +8,11 @@
 #include "list.c"
 #include "vector.c"
 
-#define error(...) (printf(__VA_ARGS__),exit(1))
+#define error(format, ...) \
+	(printf(format, __VA_ARGS__), exit(1))
+
+#define quit(format, ...) \
+	error("file %s, line %d, func %s\n" format, __FILE__, __LINE__, __func__, __VA_ARGS__)
 
 static char *read_file(char *name) {
 	FILE *f = fopen(name, "r");
