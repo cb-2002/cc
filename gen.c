@@ -8,14 +8,9 @@ static unsigned count = 0, loop_label = 0;
 
 static void gen_node(GenState *gs, Node *nd);
 static void gen_addr(GenState *gs, Node *nd) {
-	Var *v;
-	if (gs->decl)
-		v = define_var(gs, nd->tk);
-	else {
-		v = var_find(gs, nd->tk);
-		if (!v)
-			error_token(nd->tk, "undefined variable\n");
-	}
+	Var *v = var_find(gs, nd->tk);
+	if (!v)
+		error_token(nd->tk, "undefined variable\n");
 	printf("; %d", v->offset * 8);
 	print_token(nd->tk);
 	printf("\n");
@@ -90,6 +85,52 @@ static void gen_shift(GenState *gs, Node *nd, char *s) {
 	gen_node(gs, FIRST(nd));
 	printf("pop rcx\n");
 	printf("%s rax, cl\n", s);
+}
+
+static void gen_declarator_local(GenState *gs, Node *spec, Node *ptr, Node *var) {
+	define_local(gs, spec, ptr, var->kind == ND_ASSIGN ? FIRST(var) : var);
+	gen_node(gs, var);
+}
+
+// TODO different node kind for assigned declarator
+static void gen_declarator_global(GenState *gs, Node *spec, Node *ptr, Node *var) {
+	define_global(gs, spec, ptr, var->kind == ND_ASSIGN ? FIRST(var) : var);
+	switch (var->kind) {
+		case ND_VAR:
+			// TODO print_node
+			print_token(var->tk);
+			printf(" dw 0\n");
+			break;
+		case ND_ASSIGN:
+			Node *val = SECOND(var);
+			var = FIRST(var);
+			print_token(var->tk);
+			printf(" dw ");
+			print_token(val->tk);
+			printf("\n");
+			break;
+		// function prototype
+		case ND_FN:
+			printf("extern ");
+			print_token(FN_VAR(var)->tk);
+			printf("\n");
+			break;
+		default:
+			// TODO error_node
+			// TODO abort
+			error_token(var->tk, "unknown node type\n");
+	}
+}
+
+typedef void GenDeclarator(GenState *gs, Node *spec, Node *ptr, Node *var);
+static void gen_declarators(GenState *gs, Node *spec, Node *nd, GenDeclarator *gen_declarator) {
+	do {
+		gen_declarator(gs, spec, DECL_PTR(nd), DECL_VAR(nd));
+	} while (nd = DECL_NEXT(nd));
+}
+
+static void gen_declaration(GenState *gs, Node *nd, GenDeclarator *gen_declarator) {
+	gen_declarators(gs, FIRST(nd), SECOND(nd), gen_declarator);
 }
 
 static void gen_node(GenState *gs, Node *nd) {
@@ -193,12 +234,6 @@ static void gen_node(GenState *gs, Node *nd) {
 		case ND_COMMA:
 			gen_node(gs, FIRST(nd));
 			gen_node(gs, SECOND(nd));
-			return;
-		case ND_DECLARATOR:
-			gs->decl = true;
-			gen_node(gs, DECL_VAR(nd));
-			gen_node(gs, DECL_NEXT(nd));
-			gs->decl = false;
 			return;
 		case ND_ASSIGN:
 			gen_addr(gs, FIRST(nd));
@@ -319,7 +354,7 @@ static void gen_node(GenState *gs, Node *nd) {
 			gen_prefix(gs, nd, "dec");
 			return;
 		case ND_DECLARATION:
-			gen_node(gs, SECOND(nd));
+			gen_declaration(gs, nd, gen_declarator_local);
 			return;
 		default:
 			error_token(nd->tk, "unknown node type\n");
@@ -329,42 +364,13 @@ static void gen_node(GenState *gs, Node *nd) {
 static void gen(Ast *ast) {
 	GenState *gs = &(GenState){
 		.scope = scope_new(),
-		.decl = false,
 	};
 	printf("bits 64\n");
 	printf("default rel\n");
 	printf("global main\n");
 	printf("section .data\n");
-	for (int i = 0; i < vec_len(ast->vars); ++i) {
-		for(Node *decl = SECOND(ast->vars[i]); decl; decl = DECL_NEXT(decl)) {
-			assert(decl->kind == ND_DECLARATOR);
-			Node *nd = DECL_VAR(decl);
-			switch(nd->kind) {
-				case ND_VAR:
-					define_sym(gs, nd->tk, 0);
-					print_token(nd->tk);
-					printf(" dw 0\n");
-					break;
-				case ND_ASSIGN:
-					Node *var = FIRST(nd), *val = SECOND(nd);
-					define_sym(gs, var->tk, 0);
-					print_token(var->tk);
-					printf(" dw ");
-					assert(val->kind == ND_INT);
-					print_token(val->tk);
-					printf("\n");
-					break;
-				// function prototype
-				case ND_FN:
-					printf("extern ");
-					print_token(FN_VAR(nd)->tk);
-					printf("\n");
-					break;
-				default:
-					error_token(nd->tk, "unknown node type\n");
-			}
-		}
-	}
+	for (unsigned i = 0; i < vec_len(ast->vars); ++i)
+		gen_declaration(gs, ast->vars[i], gen_declarator_global);
 	printf("section .text\n");
 	for (int i = 0; i < vec_len(ast->fns); i++)
 		gen_node(gs, ast->fns[i]);

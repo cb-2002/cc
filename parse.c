@@ -47,11 +47,11 @@ struct Node {
 #define FN_BODY FITH
 
 #define PARAM_SPEC FIRST
-#define PARAM_TYPE SECOND
+#define PARAM_PTR SECOND
 #define PARAM_VAR THIRD
 #define PARAM_NEXT FORTH
 
-#define DECL_TYPE FIRST
+#define DECL_PTR FIRST
 #define DECL_VAR SECOND
 #define DECL_NEXT THIRD
 
@@ -419,7 +419,7 @@ static Node *parse_type(void) {
 static Node *parse_param(void) {
 	Node *nd = node_new(ND_PARAM);
 	PARAM_SPEC(nd) = parse_specifier();
-	PARAM_TYPE(nd) = parse_type();
+	PARAM_PTR(nd) = parse_type();
 	PARAM_VAR(nd) = parse_var();
 	return nd;
 }
@@ -460,7 +460,7 @@ static Node *parse_init_declarator(void) {
 
 static Node *parse_declarator(void) {
 	Node *nd = node_new(ND_DECLARATOR);
-	DECL_TYPE(nd) = parse_type();
+	DECL_PTR(nd) = parse_type();
 	DECL_VAR(nd) = parse_init_declarator();
 	return nd;
 }
