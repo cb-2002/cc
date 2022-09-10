@@ -119,13 +119,3 @@ static void define_params(GenState *gs, Node *nd) {
 	for (int offset = -1; nd; nd = PARAM_NEXT(nd))
 		define_var(gs, --offset, PARAM_SPEC(nd), PARAM_PTR(nd), PARAM_VAR(nd));
 }
-
-static void define_vars(GenState *gs, Node *spec, Node *nd) {
-	do
-		define_var(gs, ++gs->scope->offset, spec, DECL_VAR(nd), DECL_PTR(nd));
-	while (nd = DECL_NEXT(nd));
-}
-
-static void analyze_declaration(GenState *gs, Node *nd) {
-	define_vars(gs, FIRST(nd), SECOND(nd));
-}

@@ -116,7 +116,7 @@ static char *line_end(char *pos) {
 }
 
 static unsigned line_offset(char *start, char *pos) {
-	unsigned col;
+	unsigned col = 0;
 	for (char *s = start; s < pos; ++s) {
 		col += *s == '\t' ? 8 - col % 8
 			: 1;
@@ -252,7 +252,6 @@ static void scan_comment(TokenState *ts) {
 }
 
 static TokenKind scan(TokenState *ts) {
-	TokenKind k;
 	ts->start = ts->pos;
 	switch (ts->pos[0]) {
 		case '\0':
