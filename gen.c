@@ -10,7 +10,7 @@ static void gen_node(GenState *gs, Node *nd);
 static void gen_addr(GenState *gs, Node *nd) {
 	Var *v = var_find(gs, nd->tk);
 	if (!v)
-		error_token(nd->tk, "undefined variable\n");
+		error_node(nd, "undefined variable\n");
 	printf("; %d", v->offset * 8);
 	print_node(nd);
 	printf("\n");
@@ -29,7 +29,7 @@ static void gen_addr(GenState *gs, Node *nd) {
 			gen_node(gs, FIRST(nd));
 			return;
 		default:
-			error_token(nd->tk, "expected lvar\n");
+			error_node(nd, "expected lvar\n");
 	}
 }
 
@@ -115,9 +115,8 @@ static void gen_declarator_global(GenState *gs, Node *spec, Node *ptr, Node *var
 			printf("\n");
 			break;
 		default:
-			// TODO error_node
 			// TODO abort
-			error_token(var->tk, "unknown node type\n");
+			error_node(var, "unknown node type\n");
 	}
 }
 
@@ -355,7 +354,7 @@ static void gen_node(GenState *gs, Node *nd) {
 			gen_declaration(gs, nd, gen_declarator_local);
 			return;
 		default:
-			error_token(nd->tk, "unknown node type\n");
+			error_node(nd, "unknown node type\n");
 	}
 }
 

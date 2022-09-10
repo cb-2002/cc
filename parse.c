@@ -92,6 +92,9 @@ static unsigned node_depth(Node *nd) {
 #define print_node(nd) \
 	print_token(nd->tk)
 
+#define error_node(nd, ...) \
+	error_token(nd->tk, ##__VA_ARGS__)
+
 // ast structure
 
 typedef struct Scope Scope;
