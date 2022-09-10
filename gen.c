@@ -12,7 +12,7 @@ static void gen_addr(GenState *gs, Node *nd) {
 	if (!v)
 		error_token(nd->tk, "undefined variable\n");
 	printf("; %d", v->offset * 8);
-	print_token(nd->tk);
+	print_node(nd);
 	printf("\n");
 	switch(nd->kind) {
 		case ND_VAR:
@@ -21,7 +21,7 @@ static void gen_addr(GenState *gs, Node *nd) {
 				printf("sub rax, %d\n", 8 * v->offset);
 			} else {
 				printf("mov rax, ");
-				print_token(nd->tk);
+				print_node(nd);
 				printf("\n");
 			}
 			return;
@@ -97,16 +97,15 @@ static void gen_declarator_global(GenState *gs, Node *spec, Node *ptr, Node *var
 	define_global(gs, spec, ptr, var->kind == ND_ASSIGN ? FIRST(var) : var);
 	switch (var->kind) {
 		case ND_VAR:
-			// TODO print_node
-			print_token(var->tk);
+			print_node(var);
 			printf(" dw 0\n");
 			break;
 		case ND_ASSIGN:
 			Node *val = SECOND(var);
 			var = FIRST(var);
-			print_token(var->tk);
+			print_node(var);
 			printf(" dw ");
-			print_token(val->tk);
+			print_node(val);
 			printf("\n");
 			break;
 		// function prototype
@@ -137,12 +136,12 @@ static void gen_node(GenState *gs, Node *nd) {
 	if(!nd)
 		return;
 	printf("; ");
-	print_token(nd->tk);
+	print_node(nd);
 	printf("\n");
 	switch(nd->kind) {
 		case ND_INT:
 			printf("mov rax, ");
-			print_token(nd->tk);
+			print_node(nd);
 			printf("\n");
 			return;
 		case ND_ADD:
@@ -306,7 +305,7 @@ static void gen_node(GenState *gs, Node *nd) {
 			return;
 		case ND_LABEL:
 			printf(".");
-			print_token(nd->tk);
+			print_node(nd);
 			printf(":\n");
 			gen_node(gs, FIRST(nd));
 			return;
