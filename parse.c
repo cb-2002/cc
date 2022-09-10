@@ -480,8 +480,7 @@ static Node *parse_declaration(void) {
 	Node *nd = node_new(ND_DECLARATION);
 	FIRST(nd) = parse_specifier();
 	SECOND(nd) = parse_declarators();
-	return SECOND(nd)->kind == ND_FN ? SECOND(nd)
-		: nd;
+	return nd;
 }
 
 static Node *parse_unit(void) {
