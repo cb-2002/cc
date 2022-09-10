@@ -114,7 +114,6 @@ static bool is_specifier(void) {
 }
 
 // huristic for difference between definition and declaration
-// TODO does this work with structs?
 static bool is_fn(void) {
 	for (Token *tmp = tk; tmp->kind != '\0'; ++tmp)
 		if (tmp->kind == ';')
@@ -332,7 +331,6 @@ static Node *parse_assign(void) {
 		[TK_SUB_A] = ND_SUB_A,
 		[TK_XOR_A] = ND_XOR_A,
 	};
-	// TODO do this in a separate pass
 	Node *nd = parse_binary_right(table, &parse_lor);
 	switch(nd->kind) {
 		case ND_ADD_A:
@@ -404,8 +402,6 @@ static Node *parse_block(void) {
 }
 
 static Node *parse_specifier(void) {
-	// TODO types
-	// for now everything is an int
 	Node *nd = node_new(ND_SPECIFIER);
 	token_expect(TK_TYPE);
 	return nd;

@@ -328,7 +328,6 @@ static void gen_node(GenState *gs, Node *nd) {
 			scope_exit(gs);
 			return;
 		case ND_CALL:
-			// TODO alias for FIRST AND SECOND?
 			gen_node(gs, SECOND(nd));
 			printf("call ");
 			print_token(FIRST(nd)->tk);
