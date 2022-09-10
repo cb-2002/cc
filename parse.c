@@ -89,8 +89,8 @@ static unsigned node_depth(Node *nd) {
 	return nd ? 1 + node_depth(SECOND(nd)) : 0;
 }
 
-#define print_node(nd) \
-	print_token(nd->tk)
+#define print_node(nd, ...) \
+	print_token(nd->tk, ##__VA_ARGS__)
 
 #define error_node(nd, ...) \
 	error_token(nd->tk, ##__VA_ARGS__)
