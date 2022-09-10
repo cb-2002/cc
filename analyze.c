@@ -1,15 +1,55 @@
+// types
+
+enum TypeKind {
+       TY_UNKNOWN,
+
+       TY_PTR,
+       TY_INT,
+};
+typedef enum TypeKind TypeKind;
+
+typedef struct Type Type;
+struct Type {
+       TypeKind kind;
+       Type *base;
+};
+
+static Type *type_new(TypeKind kind, Type *base) {
+       Type *ty = malloc(sizeof(Type));
+       ty->kind = kind;
+       ty->base = base;
+       return ty;
+}
+
+static TypeKind type_spec(Node *nd) {
+       static TypeKind table[] = {
+               [ND_INT] = TY_INT,
+               [ND_PTR] = TY_PTR,
+       };
+       return table[nd->kind];
+}
+
+static Type *type_node(Node *spec, Node *ptr) {
+       Type *ty = type_new(type_spec(spec), NULL);
+       for (; ptr; ptr = FIRST(ptr))
+               ty = type_new(TY_PTR, ty);
+       return ty;
+}
+
 // var
 
 typedef struct Var Var;
 struct Var {
 	Token *tk;
 	int offset;
+	Type *ty;
 };
 
-static Var *var_new(Var **vars, Token *tk, int offset) {
+static Var *var_new(Var **vars, Token *tk, int offset, Type *ty) {
 	Var v = {
 		.tk = tk,
 		.offset = offset,
+		.ty = ty,
 	};
 	vec_push_back(*vars, v);
 	return vec_back(*vars);
@@ -63,7 +103,8 @@ static Var *var_find(GenState *gs, Token *tk) {
 
 static void define_var(GenState *gs, unsigned offset, Node *spec, Node *ptr, Node *var) {
 	Token *tk = var->tk;
-	var_new(&gs->scope->vars, tk, offset);
+	Type *ty = type_node(spec, ptr);
+	var_new(&gs->scope->vars, tk, offset, ty);
 }
 
 static void define_local(GenState *gs, Node *spec, Node *ptr, Node *var) {
