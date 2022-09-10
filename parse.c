@@ -351,6 +351,9 @@ static Node *parse_assign(void) {
 			--nd->kind;
 			RIGHT(nd) = node_cpy(nd);
 			nd->kind = ND_ASSIGN;
+			break;
+		default:
+			break;
 	}
 	return nd;
 }

@@ -38,7 +38,8 @@ enum TokenKind {
 
 	TK_COUNT,
 };
-typedef enum TokenKind TokenKind;
+typedef unsigned short TokenKind;
+static_assert(USHRT_MAX > TK_COUNT, "");
 
 typedef struct Token Token;
 typedef struct TokenState TokenState;
