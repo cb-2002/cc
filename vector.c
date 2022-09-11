@@ -1,20 +1,23 @@
-// v[-1] for length, v[-2] for capacity, v[-3] for stride
+typedef struct Vec Vec;
+struct Vec {
+	unsigned len, cap, stride;
+};
 
 #define vec_len(v) \
-	((unsigned *)(v))[-1]
+	(((Vec *)(v))[-1].len)
 
 #define vec_cap(v) \
-	((unsigned *)(v))[-2]
+	(((Vec *)(v))[-1].cap)
 
 #define vec_stride(v) \
-	((unsigned *)(v))[-3]
+	(((Vec *)(v))[-1].stride)
 
 unsigned vec_size(void *v) {
-	return sizeof(unsigned) * 3 + vec_cap(v) * vec_stride(v);
+	return sizeof(Vec) * 3 + vec_cap(v) * vec_stride(v);
 }
 
 static void *vec_new(unsigned cap, unsigned stride) {
-	unsigned *start = malloc(sizeof(unsigned) * 3 + cap * stride);
+	unsigned *start = malloc(sizeof(Vec) + cap * stride);
 	void *v = start + 3;
 	vec_len(v) = 0;
 	vec_cap(v) = cap;
