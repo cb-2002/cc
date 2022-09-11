@@ -33,19 +33,20 @@ static void gen_addr(GenState *gs, Node *nd) {
 	}
 }
 
-static void gen_binary(GenState *gs, Node *nd, char *s) {
+static void gen_binary_args(GenState *gs, Node *nd) {
 	gen_node(gs, RIGHT(nd));
 	printf("push rax\n");
 	gen_node(gs, LEFT(nd));
 	printf("pop rcx\n");
+}
+
+static void gen_binary(GenState *gs, Node *nd, char *s) {
+	gen_binary_args(gs, nd);
 	printf("%s rax, rcx\n", s);
 }
 
 static void gen_div(GenState *gs, Node *nd) {
-	gen_node(gs, RIGHT(nd));
-	printf("push rax\n");
-	gen_node(gs, FIRST(nd));
-	printf("pop rcx\n");
+	gen_binary_args(gs, nd);
 	printf("cqo\n");
 	printf("idiv rcx\n");
 }
@@ -80,10 +81,7 @@ static void gen_logical(GenState *gs, Node *nd, char *s) {
 }
 
 static void gen_shift(GenState *gs, Node *nd, char *s) {
-	gen_node(gs, RIGHT(nd));
-	printf("push rax\n");
-	gen_node(gs, FIRST(nd));
-	printf("pop rcx\n");
+	gen_binary_args(gs, nd);
 	printf("%s rax, cl\n", s);
 }
 
