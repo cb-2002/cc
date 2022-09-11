@@ -33,3 +33,4 @@ goto :exit
 :exit
 echo done
 popd
+(goto) 2>nul || exit /b
