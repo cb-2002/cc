@@ -22,14 +22,12 @@ exit /b
 
 :compile_error
 type tmp.asm
-popd
 goto :exit
 
 :run_error
 echo got %errorlevel%, expected %expected%
 nasm -g -F cv8 -f win64 tmp.asm -o tmp.obj 
 link /pdb:tmp.pdf /debug /nologo /entry:main /out:tmp.exe tmp.obj 
-popd
 goto :exit
 
 :exit
